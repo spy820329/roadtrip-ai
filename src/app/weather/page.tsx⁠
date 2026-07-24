@@ -1,0 +1,131 @@
+'use client';
+
+import React, { useState } from 'react';
+import { 
+  CloudSun, 
+  CloudRain, 
+  Wind, 
+  Waves, 
+  Sun, 
+  Sunset, 
+  ArrowLeft, 
+  MapPin, 
+  Sparkles,
+  AlertTriangle
+} from 'lucide-react';
+import Link from 'next/link';
+
+export default function WeatherPage() {
+  const [selectedLocation, setSelectedLocation] = useState('宜蘭蘇澳 / 東澳海灣');
+
+  return (
+    <main className="min-h-screen p-4 md:p-8 max-w-2xl mx-auto pb-24 text-slate-700">
+      {/* Top Bar */}
+      <div className="flex items-center gap-3 mb-6">
+        <Link href="/" className="p-2.5 bg-white border-2 border-pink-100 rounded-2xl text-pink-500 hover:bg-pink-50 transition shadow-sm">
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div>
+          <h1 className="text-xl font-black text-slate-800 flex items-center gap-2">
+            <CloudSun className="w-6 h-6 text-orange-400" />
+            天氣與浪高預報
+          </h1>
+          <p className="text-xs text-slate-400 font-medium">即時氣象、浪高與自駕安全指數</p>
+        </div>
+      </div>
+
+      {/* 選擇地點 */}
+      <div className="bg-white p-4 rounded-3xl border-2 border-pink-100 shadow-md mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+          <MapPin className="w-4 h-4 text-pink-400" />
+          <span>目的地：</span>
+        </div>
+        <select 
+          value={selectedLocation} 
+          onChange={(e) => setSelectedLocation(e.target.value)}
+          className="bg-amber-50/60 border border-pink-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 focus:outline-none"
+        >
+          <option value="宜蘭蘇澳 / 東澳海灣">🌊 宜蘭蘇澳 / 東澳海灣</option>
+          <option value="新北石門 / 淺水灣">🏖️ 新北石門 / 淺水灣</option>
+          <option value="花蓮七星潭">🐬 花蓮七星潭</option>
+          <option value="墾丁白沙灣">☀️ 墾丁白沙灣</option>
+        </select>
+      </div>
+
+      {/* 主要天氣大卡片 */}
+      <section className="bg-gradient-to-r from-orange-300 via-pink-300 to-amber-300 p-6 rounded-3xl text-white shadow-xl shadow-orange-100 mb-6 relative overflow-hidden">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <div className="text-xs font-bold bg-white/20 px-3 py-1 rounded-full backdrop-blur-md inline-block mb-2">
+              本日氣象概況
+            </div>
+            <h2 className="text-2xl font-black">{selectedLocation}</h2>
+            <p className="text-xs opacity-90 mt-1 font-medium">晴時多雲 · 適宜自駕出遊</p>
+          </div>
+          <div className="text-right">
+            <div className="text-4xl font-black">28°C</div>
+            <div className="text-xs opacity-90 mt-1">體感 30°C</div>
+          </div>
+        </div>
+
+        {/* 4 大指標 Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-4 border-t border-white/30 text-center">
+          <div className="bg-white/20 backdrop-blur-md p-2.5 rounded-2xl">
+            <CloudRain className="w-4 h-4 mx-auto mb-1 opacity-90" />
+            <div className="text-[10px] opacity-80">降雨機率</div>
+            <div className="text-sm font-black mt-0.5">20%</div>
+          </div>
+          <div className="bg-white/20 backdrop-blur-md p-2.5 rounded-2xl">
+            <Wind className="w-4 h-4 mx-auto mb-1 opacity-90" />
+            <div className="text-[10px] opacity-80">陣風風速</div>
+            <div className="text-sm font-black mt-0.5">3 級 (微風)</div>
+          </div>
+          <div className="bg-white/20 backdrop-blur-md p-2.5 rounded-2xl">
+            <Waves className="w-4 h-4 mx-auto mb-1 opacity-90" />
+            <div className="text-[10px] opacity-80">預估浪高</div>
+            <div className="text-sm font-black mt-0.5">0.8 米 (平浪)</div>
+          </div>
+          <div className="bg-white/20 backdrop-blur-md p-2.5 rounded-2xl">
+            <Sun className="w-4 h-4 mx-auto mb-1 opacity-90" />
+            <div className="text-[10px] opacity-80">紫外射線</div>
+            <div className="text-sm font-black mt-0.5">高 (7)</div>
+          </div>
+        </div>
+      </section>
+
+      {/* 日出日落與潮汐時間 */}
+      <section className="grid grid-cols-2 gap-3 mb-6">
+        <div className="bg-white p-4 rounded-3xl border-2 border-pink-100 shadow-sm flex items-center gap-3">
+          <div className="p-3 bg-amber-100 text-amber-500 rounded-2xl">
+            <Sun className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-slate-400">晨曦日出</div>
+            <div className="text-sm font-black text-slate-700">05:22 AM</div>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-3xl border-2 border-pink-100 shadow-sm flex items-center gap-3">
+          <div className="p-3 bg-orange-100 text-orange-500 rounded-2xl">
+            <Sunset className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-slate-400">夕陽日落</div>
+            <div className="text-sm font-black text-slate-700">06:45 PM</div>
+          </div>
+        </div>
+      </section>
+
+      {/* AI 出遊建議 */}
+      <section className="bg-amber-50 p-5 rounded-3xl border-2 border-amber-200 shadow-sm">
+        <div className="flex items-center gap-2 text-amber-800 font-bold text-sm mb-2">
+          <Sparkles className="w-4 h-4 text-amber-500" />
+          <span>AI 浪況與行程溫馨提示</span>
+        </div>
+        <p className="text-xs text-amber-900 leading-relaxed font-medium">
+          今日浪高 0.8 米屬於平穩狀態，適合進行海邊踏浪或立槳 (SUP) 活動！午後紫外線較強，建議塗抹防曬乳並準備墨鏡。
+        </p>
+      </section>
+    </main>
+  );
+}
