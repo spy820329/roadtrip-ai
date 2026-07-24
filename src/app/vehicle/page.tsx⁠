@@ -1,0 +1,139 @@
+'use client';
+
+import React, { useState } from 'react';
+import { 
+  Car, 
+  Fuel, 
+  Gauge, 
+  Wrench, 
+  ArrowLeft, 
+  CheckCircle2, 
+  AlertCircle,
+  TrendingUp,
+  DollarSign
+} from 'lucide-react';
+import Link from 'next/link';
+
+export default function VehiclePage() {
+  const [carModel, setCarModel] = useState('Toyota RAV4');
+  const [avgFuelConsumption, setAvgFuelConsumption] = useState('14.5'); // km/L
+  const [fuelPrice, setFuelPrice] = useState('31.2'); // 元/L (95無鉛)
+  const [tripDistance, setTripDistance] = useState('380'); // km
+
+  // 自動計算
+  const distance = parseFloat(tripDistance) || 0;
+  const consumption = parseFloat(avgFuelConsumption) || 1;
+  const price = parseFloat(fuelPrice) || 0;
+
+  const neededLiters = (distance / consumption).toFixed(1);
+  const estimatedFuelCost = Math.round((distance / consumption) * price);
+
+  const maintenanceChecklist = [
+    { title: '胎壓檢查 (33-35 PSI)', checked: true },
+    { title: '引擎機油與煞車油位', checked: true },
+    { title: '雨刷水補滿', checked: true },
+    { title: '行車記錄器記憶卡正常', checked: false },
+    { title: '備胎與緊急三角警示牌', checked: false },
+  ];
+
+  return (
+    <main className="min-h-screen p-4 md:p-8 max-w-2xl mx-auto pb-24 text-slate-700">
+      {/* Top Bar */}
+      <div className="flex items-center gap-3 mb-6">
+        <Link href="/" className="p-2.5 bg-white border-2 border-pink-100 rounded-2xl text-pink-500 hover:bg-pink-50 transition shadow-sm">
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div>
+          <h1 className="text-xl font-black text-slate-800 flex items-center gap-2">
+            <Car className="w-6 h-6 text-indigo-500" />
+            愛車與油耗管理
+          </h1>
+          <p className="text-xs text-slate-400 font-medium">自駕行程油資試算與出發前檢查</p>
+        </div>
+      </div>
+
+      {/* 車輛概況卡片 */}
+      <section className="bg-gradient-to-r from-indigo-400 to-purple-400 p-6 rounded-3xl text-white shadow-xl shadow-indigo-100 mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <span className="text-xs font-bold bg-white/20 px-3 py-1 rounded-full backdrop-blur-md">
+              🚘 目前設定車輛
+            </span>
+            <div className="text-2xl font-black mt-2">{carModel}</div>
+          </div>
+          <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
+            <Gauge className="w-8 h-8 text-white" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/20 text-xs">
+          <div>
+            <div className="opacity-80">平均油耗</div>
+            <div className="text-lg font-black">{avgFuelConsumption} <span className="text-xs font-normal">km/L</span></div>
+          </div>
+          <div>
+            <div className="opacity-80">當前預設油價</div>
+            <div className="text-lg font-black">${fuelPrice} <span className="text-xs font-normal">元/L</span></div>
+          </div>
+        </div>
+      </section>
+
+      {/* 本次旅途油資試算器 */}
+      <section className="bg-white p-5 rounded-3xl border-2 border-pink-100 shadow-md mb-6">
+        <h2 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+          <Fuel className="w-4 h-4 text-pink-500" />
+          預估行程油費試算
+        </h2>
+
+        <div className="space-y-3 mb-4">
+          <div>
+            <label className="text-xs font-bold text-slate-500 mb-1 block">預計總行駛里程 (km)</label>
+            <input
+              type="number"
+              value={tripDistance}
+              onChange={(e) => setTripDistance(e.target.value)}
+              className="w-full bg-amber-50/50 border-2 border-pink-100 rounded-2xl p-3 text-sm font-bold text-slate-700 focus:outline-none focus:border-pink-300"
+            />
+          </div>
+        </div>
+
+        {/* 試算結果小卡片 */}
+        <div className="bg-pink-50/60 p-4 rounded-2xl border border-pink-200 grid grid-cols-2 gap-2 text-center">
+          <div>
+            <div className="text-[11px] font-bold text-slate-400">預估汽油消耗</div>
+            <div className="text-base font-black text-slate-700 mt-0.5">{neededLiters} L</div>
+          </div>
+          <div>
+            <div className="text-[11px] font-bold text-slate-400">預估油資開銷</div>
+            <div className="text-lg font-black text-pink-500 mt-0.5">${estimatedFuelCost}</div>
+          </div>
+        </div>
+      </section>
+
+      {/* 出發前安全檢查清單 */}
+      <section className="bg-white p-5 rounded-3xl border-2 border-pink-100 shadow-md">
+        <h2 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+          <Wrench className="w-4 h-4 text-indigo-500" />
+          出發前五油三水與安全檢查
+        </h2>
+
+        <div className="space-y-2">
+          {maintenanceChecklist.map((item, idx) => (
+            <div 
+              key={idx}
+              className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 text-xs font-bold text-slate-700"
+            >
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className={`w-4 h-4 ${item.checked ? 'text-emerald-500' : 'text-slate-300'}`} />
+                <span className={item.checked ? 'line-through text-slate-400' : ''}>{item.title}</span>
+              </div>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${item.checked ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                {item.checked ? '已確認' : '待檢查'}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
