@@ -86,18 +86,18 @@ export default function Home() {
   };
 
   const modules = [
-    { id: 1, name: '旅伴與群組', icon: Users, color: 'bg-pink-100 text-pink-500 border-pink-200' },
-    { id: 2, name: '行程規劃', icon: Compass, color: 'bg-emerald-100 text-emerald-500 border-emerald-200' },
-    { id: 3, name: '地圖導航', icon: Navigation, color: 'bg-sky-100 text-sky-500 border-sky-200' },
-    { id: 4, name: 'AI 智慧排程', icon: Sparkles, color: 'bg-purple-100 text-purple-500 border-purple-200' },
-    { id: 5, name: '記帳與分帳', icon: DollarSign, color: 'bg-amber-100 text-amber-600 border-amber-200' },
-    { id: 6, name: '愛車與油耗', icon: Car, color: 'bg-indigo-100 text-indigo-500 border-indigo-200' },
-    { id: 7, name: '打包清單', icon: Package, color: 'bg-teal-100 text-teal-600 border-teal-200' },
-    { id: 8, name: '天氣與海況', icon: CloudSun, color: 'bg-orange-100 text-orange-500 border-orange-200' },
-    { id: 9, name: '社群分享', icon: Share2, color: 'bg-rose-100 text-rose-500 border-rose-200' },
-    { id: 10, name: '旅行小幫手', icon: Bot, color: 'bg-cyan-100 text-cyan-600 border-cyan-200' },
-    { id: 11, name: '回憶相簿', icon: Camera, color: 'bg-yellow-100 text-yellow-600 border-yellow-200' },
-    { id: 12, name: '系統設定', icon: Settings, color: 'bg-slate-100 text-slate-500 border-slate-200' },
+    { id: 1, name: '旅伴與群組', icon: Users, color: 'bg-pink-100 text-pink-500 border-pink-200', href: '#' },
+    { id: 2, name: '行程規劃', icon: Compass, color: 'bg-emerald-100 text-emerald-500 border-emerald-200', href: '#' },
+    { id: 3, name: '地圖導航', icon: Navigation, color: 'bg-sky-100 text-sky-500 border-sky-200', href: '#' },
+    { id: 4, name: 'AI 智慧排程', icon: Sparkles, color: 'bg-purple-100 text-purple-500 border-purple-200', href: '#' },
+    { id: 5, name: '記帳與分帳', icon: DollarSign, color: 'bg-amber-100 text-amber-600 border-amber-200', href: '/expenses' },
+    { id: 6, name: '愛車與油耗', icon: Car, color: 'bg-indigo-100 text-indigo-500 border-indigo-200', href: '/vehicle' },
+    { id: 7, name: '打包清單', icon: Package, color: 'bg-teal-100 text-teal-600 border-teal-200', href: '/packing' },
+    { id: 8, name: '天氣與海況', icon: CloudSun, color: 'bg-orange-100 text-orange-500 border-orange-200', href: '/weather' },
+    { id: 9, name: '社群分享', icon: Share2, color: 'bg-rose-100 text-rose-500 border-rose-200', href: '/share' },
+    { id: 10, name: '旅行小幫手', icon: Bot, color: 'bg-cyan-100 text-cyan-600 border-cyan-200', href: '/assistant' },
+    { id: 11, name: '回憶相簿', icon: Camera, color: 'bg-yellow-100 text-yellow-600 border-yellow-200', href: '#' },
+    { id: 12, name: '系統設定', icon: Settings, color: 'bg-slate-100 text-slate-500 border-slate-200', href: '#' },
   ];
 
   return (
@@ -164,7 +164,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* AI 旅行大腦 運算結果時間軸 (Dynamic Timeline Result) */}
+      {/* AI 旅行大腦 運算結果時間軸 */}
       {aiResult && (
         <section className="bg-white p-6 rounded-3xl border-2 border-pink-200 shadow-xl mb-8 animate-fade-in">
           <div className="flex justify-between items-start mb-4 pb-3 border-b border-pink-100">
@@ -180,7 +180,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Highlights 標籤 */}
           <div className="flex flex-wrap gap-1.5 mb-6">
             {aiResult.routeHighlights.map((hl, idx) => (
               <span key={idx} className="text-[11px] font-bold bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-md border border-amber-200 flex items-center gap-1">
@@ -190,14 +189,12 @@ export default function Home() {
             ))}
           </div>
 
-          {/* 時間軸清單 */}
           <div className="relative pl-6 border-l-2 border-pink-200 space-y-6">
             {aiResult.itinerary.map((item, idx) => {
               const badge = getCategoryBadge(item.category);
               const BadgeIcon = badge.icon;
               return (
                 <div key={idx} className="relative group">
-                  {/* 時間軸節點小圓圈 */}
                   <div className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-pink-400 border-4 border-white shadow-sm" />
 
                   <div className="bg-slate-50/80 hover:bg-pink-50/30 border border-slate-200/80 hover:border-pink-200 rounded-2xl p-4 transition shadow-sm">
@@ -229,7 +226,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* 12 Core Modules 明亮風格 */}
+      {/* 12 Core Modules 明亮風格與動態 Link 串接 */}
       <section>
         <h2 className="text-base font-bold mb-4 text-slate-800 flex items-center gap-2">
           <MapPin className="w-4 h-4 text-pink-400" />
@@ -240,8 +237,9 @@ export default function Home() {
           {modules.map((mod) => {
             const IconComponent = mod.icon;
             return (
-              <div 
+              <Link 
                 key={mod.id}
+                href={mod.href}
                 className="bg-white hover:bg-amber-50/40 border-2 border-slate-100 hover:border-pink-200 rounded-2xl p-4 flex flex-col items-start gap-3 cursor-pointer transition shadow-sm hover:shadow-md group"
               >
                 <div className={`p-3 rounded-2xl border ${mod.color} group-hover:scale-110 transition duration-300 shadow-sm`}>
@@ -251,7 +249,7 @@ export default function Home() {
                   <div className="text-[10px] font-black text-slate-300 tracking-wider">MODULE {mod.id.toString().padStart(2, '0')}</div>
                   <div className="text-sm font-bold text-slate-700 mt-0.5">{mod.name}</div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
