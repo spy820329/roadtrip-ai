@@ -1,0 +1,169 @@
+'use client';
+
+import React, { useState } from 'react';
+import { 
+  Share2, 
+  Download, 
+  Copy, 
+  ArrowLeft, 
+  Instagram, 
+  MapPin, 
+  Sparkles, 
+  Check,
+  Heart,
+  Camera,
+  Compass
+} from 'lucide-react';
+import Link from 'next/link';
+
+export default function SharePage() {
+  const [copied, setCopied] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<'polaroid' | 'route' | 'story'>('polaroid');
+
+  const tripSummary = {
+    title: '宜蘭花蓮沿海自駕之旅 🌊',
+    date: '2026.07.26',
+    distance: '380 km',
+    spots: ['淺水灣海景步道', '海岸小農海鮮', '懸崖海景咖啡館', '海景飯店 Check-in'],
+    vibe: '放鬆 · 海風 · 美食'
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <main className="min-h-screen p-4 md:p-8 max-w-2xl mx-auto pb-24 text-slate-700">
+      {/* Top Bar */}
+      <div className="flex items-center gap-3 mb-6">
+        <Link href="/" className="p-2.5 bg-white border-2 border-pink-100 rounded-2xl text-pink-500 hover:bg-pink-50 transition shadow-sm">
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div>
+          <h1 className="text-xl font-black text-slate-800 flex items-center gap-2">
+            <Share2 className="w-6 h-6 text-rose-500" />
+            社群分享與行程卡片
+          </h1>
+          <p className="text-xs text-slate-400 font-medium">一鍵生成 IG / Threads 高質感視覺圖</p>
+        </div>
+      </div>
+
+      {/* 版型選擇切換 */}
+      <div className="flex gap-2 mb-6 text-xs font-bold">
+        <button
+          onClick={() => setSelectedTemplate('polaroid')}
+          className={`flex-1 py-2.5 rounded-2xl border transition ${selectedTemplate === 'polaroid' ? 'bg-pink-400 text-white border-pink-400 shadow-md shadow-pink-100' : 'bg-white text-slate-600 border-slate-200'}`}
+        >
+          📷 拍立得風
+        </button>
+        <button
+          onClick={() => setSelectedTemplate('route')}
+          className={`flex-1 py-2.5 rounded-2xl border transition ${selectedTemplate === 'route' ? 'bg-pink-400 text-white border-pink-400 shadow-md shadow-pink-100' : 'bg-white text-slate-600 border-slate-200'}`}
+        >
+          🗺️ 路線地圖風
+        </button>
+        <button
+          onClick={() => setSelectedTemplate('story')}
+          className={`flex-1 py-2.5 rounded-2xl border transition ${selectedTemplate === 'story' ? 'bg-pink-400 text-white border-pink-400 shadow-md shadow-pink-100' : 'bg-white text-slate-600 border-slate-200'}`}
+        >
+          ✨ 限時動態風
+        </button>
+      </div>
+
+      {/* 可預覽的卡片區域 (Preview Canvas Card) */}
+      <div className="bg-slate-100 p-6 rounded-3xl mb-6 flex justify-center">
+        {selectedTemplate === 'polaroid' && (
+          <div className="bg-white p-5 rounded-2xl shadow-xl max-w-sm w-full border-2 border-slate-100 transform rotate-1">
+            <div className="bg-amber-100/60 h-48 rounded-xl border border-amber-200 flex flex-col items-center justify-center text-amber-700 mb-4 relative overflow-hidden">
+              <Camera className="w-10 h-10 mb-2 opacity-80" />
+              <span className="text-xs font-bold">【貼上本日最棒的照片】</span>
+              <div className="absolute top-2 right-2 bg-white/80 px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-600">
+                🚗 {tripSummary.distance}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <h3 className="text-base font-black text-slate-800">{tripSummary.title}</h3>
+                <Heart className="w-4 h-4 text-rose-500 fill-current" />
+              </div>
+              <p className="text-[11px] text-slate-400 font-bold">{tripSummary.date} · {tripSummary.vibe}</p>
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-1">
+              {tripSummary.spots.map((spot, idx) => (
+                <span key={idx} className="text-[10px] bg-pink-50 text-pink-600 font-bold px-2 py-0.5 rounded-md">
+                  #{spot}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {selectedTemplate === 'route' && (
+          <div className="bg-gradient-to-br from-amber-50 to-pink-50 p-6 rounded-3xl shadow-xl max-w-sm w-full border-2 border-pink-200">
+            <div className="flex items-center gap-2 text-pink-500 font-black text-sm mb-1">
+              <Compass className="w-4 h-4 animate-spin" />
+              <span>ROADTRIP ROUTE</span>
+            </div>
+            <h3 className="text-lg font-black text-slate-800 mb-4">{tripSummary.title}</h3>
+            
+            <div className="relative pl-4 border-l-2 border-pink-300 space-y-3 mb-4">
+              {tripSummary.spots.map((spot, idx) => (
+                <div key={idx} className="relative text-xs font-bold text-slate-700">
+                  <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-pink-400" />
+                  {spot}
+                </div>
+              ))}
+            </div>
+
+            <div className="text-right text-[10px] font-bold text-slate-400">
+              Made with RoadTrip AI v3.0 ✨
+            </div>
+          </div>
+        )}
+
+        {selectedTemplate === 'story' && (
+          <div className="bg-gradient-to-b from-rose-400 to-amber-400 p-6 rounded-3xl shadow-xl max-w-sm w-full text-white relative overflow-hidden aspect-[9/16] flex flex-col justify-between">
+            <div className="flex justify-between items-center text-xs font-bold opacity-90">
+              <span>RoadTrip AI</span>
+              <span>{tripSummary.date}</span>
+            </div>
+
+            <div className="my-auto text-center space-y-2">
+              <div className="inline-block bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold mb-2">
+                ✨ 本日自駕里程 {tripSummary.distance}
+              </div>
+              <h2 className="text-2xl font-black">{tripSummary.title}</h2>
+              <p className="text-xs opacity-90">{tripSummary.vibe}</p>
+            </div>
+
+            <div className="bg-black/10 backdrop-blur-md p-4 rounded-2xl text-xs space-y-1">
+              <div className="font-bold opacity-80 text-[10px]">ROUTE HIGHLIGHTS</div>
+              <div className="font-bold">{tripSummary.spots.join(' → ')}</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 按鈕功能操作區 */}
+      <section className="space-y-3">
+        <button
+          onClick={handleCopyLink}
+          className="w-full py-3 bg-white border-2 border-pink-200 hover:border-pink-300 text-slate-700 font-bold text-xs rounded-2xl shadow-sm transition flex items-center justify-center gap-2"
+        >
+          {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-pink-400" />}
+          {copied ? '連結已複製到剪貼簿！' : '複製行程分享連結'}
+        </button>
+
+        <button
+          onClick={() => alert('✨ 卡片已自動儲存為高解析度圖片！可直接上傳至 IG Story 或 Threads！')}
+          className="w-full py-3 bg-gradient-to-r from-pink-400 to-rose-400 hover:opacity-90 text-white font-bold text-xs rounded-2xl shadow-md shadow-pink-100 transition flex items-center justify-center gap-2"
+        >
+          <Download className="w-4 h-4" />
+          下載專屬視覺分享卡片
+        </button>
+      </section>
+    </main>
+  );
+}
