@@ -3,13 +3,15 @@ import { getAuth, GoogleAuthProvider, OAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
+// 帶入你的專屬 Firebase Config
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AIzaSyC_nlf0Wa2YDhbQAh_Sg2uhlv5UDyWsmvc",
+  authDomain: "roadtrip-ai-f5147.firebaseapp.com",
+  projectId: "roadtrip-ai-f5147",
+  storageBucket: "roadtrip-ai-f5147.firebasestorage.app",
+  messagingSenderId: "2359126507",
+  appId: "1:2359126507:web:7fba2d8660f377bb49d1ae",
+  measurementId: "G-5Z1TEDD2SB"
 };
 
 // Initialize Firebase
