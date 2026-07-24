@@ -1,0 +1,192 @@
+'use client';
+
+import React, { useState } from 'react';
+import { 
+  Bot, 
+  Sparkles, 
+  ArrowLeft, 
+  CloudRain, 
+  Navigation, 
+  Utensils, 
+  Clock, 
+  Send,
+  RefreshCw,
+  MapPin,
+  CheckCircle2
+} from 'lucide-react';
+import Link from 'next/link';
+
+interface Message {
+  id: string;
+  sender: 'user' | 'ai';
+  text: string;
+  suggestion?: {
+    action: string;
+    newSpot: string;
+    reason: string;
+  };
+}
+
+export default function AssistantPage() {
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      sender: 'ai',
+      text: '嗨！我是你的 RoadTrip AI 突發狀況小幫手 🤖！路上遇到雨很大、塞車或景點沒開嗎？點擊快捷按鈕或直接告訴我，我立刻幫你調整行程！'
+    }
+  ]);
+  const [input, setInput] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const handleQuickAction = (actionText: string) => {
+    processAssistantRequest(actionText);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    processAssistantRequest(input);
+    setInput('');
+  };
+
+  const processAssistantRequest = (userText: string) => {
+    const userMsg: Message = { id: Date.now().toString(), sender: 'user', text: userText };
+    setMessages(prev => [...prev, userMsg]);
+    setIsAnalyzing(true);
+
+    setTimeout(() => {
+      let aiReply: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: 'ai',
+        text: '收到！已經為你評估當前位置與備案方案：'
+      };
+
+      if (userText.includes('雨') || userText.includes('下雨')) {
+        aiReply.text = '☔ 偵測到戶外行程受雨勢影響，已自動為你將原本的海邊步道替換為附近的質感室內美術館與海景咖啡館！';
+        aiReply.suggestion = {
+          action: '行程自動改為室內備案',
+          newSpot: '蘭陽博物館 + 質感室內雨天咖啡廳',
+          reason: '距離目前位置僅 8 分鐘車程，附地下停車場免雨淋'
+        };
+      } else if (userText.includes('塞車') || userText.includes('塞')) {
+        aiReply.text = '🚘 前方路段車流量大（預估延誤 35 分鐘），建議改走沿海替代道路，順路補給加油站！';
+        aiReply.suggestion = {
+          action: '改走順路替代道路',
+          newSpot: '台 2 號濱海替代公路',
+          reason: '比國道節省 20 分鐘，沿途景觀優美'
+        };
+      } else {
+        aiReply.text = `✨ 沒問題！AI 旅行大腦已針對「${userText}」完成全動態調校，不需繞路即可順利進行！`;
+      }
+
+      setMessages(prev => [...prev, aiReply]);
+      setIsAnalyzing(false);
+    }, 1000);
+  };
+
+  return (
+    <main className="min-h-screen p-4 md:p-8 max-w-2xl mx-auto pb-24 text-slate-700 flex flex-col justify-between">
+      <div>
+        {/* Top Bar */}
+        <div className="flex items-center gap-3 mb-6">
+          <Link href="/" className="p-2.5 bg-white border-2 border-pink-100 rounded-2xl text-pink-500 hover:bg-pink-50 transition shadow-sm">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-black text-slate-800 flex items-center gap-2">
+              <Bot className="w-6 h-6 text-cyan-500" />
+              AI 突發狀況小幫手
+            </h1>
+            <p className="text-xs text-slate-400 font-medium">即時變更行程、雨天備案與避塞車</p>
+          </div>
+        </div>
+
+        {/* 快捷突發狀況按鈕 */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <button 
+            onClick={() => handleQuickAction('現在雨很大，幫我改室內行程')}
+            className="bg-white hover:bg-sky-50 border-2 border-sky-100 text-sky-600 px-3 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+          >
+            <CloudRain className="w-4 h-4 text-sky-400" />
+            🌧️ 現在雨很大，改室內
+          </button>
+          <button 
+            onClick={() => handleQuickAction('前方嚴重塞車，幫我重新排順路路線')}
+            className="bg-white hover:bg-amber-50 border-2 border-amber-100 text-amber-700 px-3 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+          >
+            <Navigation className="w-4 h-4 text-amber-500" />
+            🚘 前方塞車，改替代道路
+          </button>
+          <button 
+            onClick={() => handleQuickAction('大家肚子餓了，尋找附近的順路美食')}
+            className="bg-white hover:bg-pink-50 border-2 border-pink-100 text-pink-600 px-3 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+          >
+            <Utensils className="w-4 h-4 text-pink-400" />
+            🍽️ 突然肚子餓，找附近美食
+          </button>
+        </div>
+
+        {/* 對話紀錄 */}
+        <div className="space-y-4 mb-6">
+          {messages.map(msg => (
+            <div 
+              key={msg.id}
+              className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div 
+                className={`max-w-[85%] p-4 rounded-3xl text-xs font-bold leading-relaxed shadow-sm ${
+                  msg.sender === 'user'
+                    ? 'bg-pink-400 text-white rounded-br-none'
+                    : 'bg-white border-2 border-pink-100 text-slate-700 rounded-bl-none'
+                }`}
+              >
+                {msg.text}
+
+                {msg.suggestion && (
+                  <div className="mt-3 p-3 bg-amber-50 rounded-2xl border border-amber-200 text-slate-700 font-normal space-y-1">
+                    <div className="text-[11px] font-black text-amber-800 flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      {msg.suggestion.action}
+                    </div>
+                    <div className="text-xs font-bold text-slate-800">
+                      📍 {msg.suggestion.newSpot}
+                    </div>
+                    <div className="text-[10px] text-slate-500">
+                      💡 {msg.suggestion.reason}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {isAnalyzing && (
+            <div className="flex justify-start">
+              <div className="bg-white border-2 border-pink-100 p-3 rounded-2xl text-xs font-bold text-pink-500 flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                AI 正在為你評估最佳替代方案...
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 對話輸入框 */}
+      <form onSubmit={handleSubmit} className="relative mt-auto">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="告訴 AI 突發狀況（如：景點公休了、沒油了...）"
+          className="w-full bg-white border-2 border-pink-200 focus:border-pink-400 rounded-2xl p-4 pr-14 text-xs font-bold text-slate-700 placeholder-slate-400 focus:outline-none shadow-md transition"
+        />
+        <button
+          type="submit"
+          className="absolute right-2.5 top-2.5 p-2.5 bg-pink-400 hover:bg-pink-500 rounded-xl text-white shadow-md transition"
+        >
+          <Send className="w-4 h-4" />
+        </button>
+      </form>
+    </main>
+  );
+}
