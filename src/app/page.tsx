@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
-import { MapPin, Navigation, Droplet, Wallet, Camera, ChevronLeft, Share, Route, Sparkles, Clock, Coffee, Fuel, Pencil, Trash2, Plus, ImagePlus, X, Bot, PlusCircle } from 'lucide-react';
+import { MapPin, Navigation, Droplet, Wallet, Camera, ChevronLeft, Share, Route, Sparkles, Clock, Coffee, Fuel, Pencil, Trash2, Plus, ImagePlus, X, Bot, PlusCircle, Phone, FileText } from 'lucide-react';
 
 // --- 初始資料庫 ---
 const initialTripData = {
@@ -36,7 +36,22 @@ const initialTripData = {
       day: 3, date: "7/28 (二)", summary: "綠島 ➔ 花蓮市區",
       gasWarning: "⛽ 建議在成功鎮加油站補充電量與油料。",
       events: [
-        { id: "d3-1", time: "09:00", title: "半潛船", location: "綠島南寮漁港", type: "spot" },
+        { 
+          id: "d3-1", 
+          time: "09:00", 
+          title: "半潛艇（玻璃船）", 
+          location: "南寮漁港右道登船口第6根柱子", 
+          mapUrl: "https://goo.gl/maps/Vcsc1Sfr6QBtPW7P9",
+          phone: "0912151471",
+          type: "spot", 
+          note: "09:00 發船，請提前10分鐘集合（逾時不候）",
+          remarks: [
+            "藍鯨五號的黃色招牌處上船",
+            "⚠️ 臨時取消、減少人數或更改時間不作退費。",
+            "活動如因天候因素影響，將依船長評估決定是否成團出航，活動是否正常進行以船長通知為主。",
+            "如當天未依活動時間於集合地點集合，即視同自行放棄參加活動權利，亦不退費。"
+          ]
+        },
         { id: "d3-2", time: "12:30", title: "搭船回台東", location: "富岡漁港", type: "boat" },
         { id: "d3-3", time: "14:00", title: "小野柳", location: "小野柳", type: "spot" },
         { id: "d3-4", time: "14:50", title: "水往上流", location: "水往上流遊憩區", type: "spot" },
@@ -136,8 +151,12 @@ export default function MyTrip() {
   const dailyUnpaid = currentDayData?.expenses.filter(e => e.status === 'unpaid').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
   // 🌍 導航功能
-  const openSingleGoogleMap = (location: string) => {
-    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`, '_blank');
+  const openSingleGoogleMap = (location: string, customUrl?: string) => {
+    if (customUrl) {
+      window.open(customUrl, '_blank');
+    } else {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`, '_blank');
+    }
   };
 
   const openFullDayRoute = () => {
@@ -176,13 +195,12 @@ export default function MyTrip() {
     }
   };
 
-  // 🤖 呼叫 AI 取得建議 (模擬非同步)
+  // 🤖 呼叫 AI 取得建議
   const askAIForSuggestions = (query: string) => {
     if (!query.trim()) return;
     setIsThinking(true);
     setAiSuggestions([]);
     
-    // 模擬 AI 思考時間，並根據關鍵字給出建議與自動推算順路時間
     setTimeout(() => {
       let suggestions = [];
       if (activeDay === 1) {
@@ -200,13 +218,9 @@ export default function MyTrip() {
     }, 1200);
   };
 
-  // ➕ 將 AI 建議加入行程，並自動重新排序
   const addSuggestedEvent = (suggestion: any) => {
     if (!currentDayData) return;
-    
     const newEvents = [...currentDayData.events, suggestion];
-    
-    // 根據時間自動排序，確保路線順暢
     newEvents.sort((a, b) => {
       const timeA = a.time.split(':').map(Number);
       const timeB = b.time.split(':').map(Number);
@@ -214,8 +228,8 @@ export default function MyTrip() {
     });
 
     setTrip({ ...trip, days: trip.days.map(d => d.day === activeDay ? { ...d, events: newEvents } : d) });
-    setAiSuggestions(aiSuggestions.filter(s => s.id !== suggestion.id)); // 移除已新增的選項
-    setCustomQuery(''); // 清空搜尋列
+    setAiSuggestions(aiSuggestions.filter(s => s.id !== suggestion.id));
+    setCustomQuery('');
   };
 
   // 💰 記帳功能
@@ -292,19 +306,19 @@ export default function MyTrip() {
               
               <div className="relative border-l-2 border-[#8D6E63] ml-3 pl-6 space-y-6">
                 {currentDayData?.events.map((event) => (
-                  <div key={event.id} className="relative bg-white p-3 rounded-xl border-2 border-[#8D6E63] shadow-[3px_3px_0px_#8D6E63] flex flex-col">
+                  <div key={event.id} className="relative bg-white p-3.5 rounded-xl border-2 border-[#8D6E63] shadow-[3px_3px_0px_#8D6E63] flex flex-col space-y-2">
                     <div className="absolute -left-[35px] top-4 w-4 h-4 bg-[#D9B48F] rounded-full border-2 border-[#8D6E63]"></div>
                     
                     <div className="flex justify-between items-start w-full">
                       <div className="flex-1 pr-2">
                         <h3 className="font-bold text-lg">{event.time} {event.title}</h3>
-                        {event.note && <p className="text-sm text-gray-600 mt-1">{event.note}</p>}
+                        {event.note && <p className="text-sm font-semibold text-[#8D6E63] mt-1">{event.note}</p>}
                       </div>
                       
                       {/* 功能按鈕區：包含導航與刪除 */}
                       <div className="flex gap-2 flex-shrink-0">
                         {event.location && (
-                          <button onClick={() => openSingleGoogleMap(event.location)} className="bg-[#F5E6D3] p-2 rounded-full border-2 border-[#8D6E63] active:bg-[#D9B48F] shadow-[1px_1px_0px_#8D6E63]">
+                          <button onClick={() => openSingleGoogleMap(event.location, event.mapUrl)} className="bg-[#F5E6D3] p-2 rounded-full border-2 border-[#8D6E63] active:bg-[#D9B48F] shadow-[1px_1px_0px_#8D6E63]">
                             <Navigation size={18} />
                           </button>
                         )}
@@ -313,11 +327,44 @@ export default function MyTrip() {
                         </button>
                       </div>
                     </div>
+
+                    {/* 📍 地點與電話顯示 */}
+                    {(event.location || event.phone) && (
+                      <div className="text-xs bg-[#F9F5EF] p-2 rounded-lg border border-[#D7CCC8] space-y-1">
+                        {event.location && (
+                          <p className="flex items-center gap-1 font-medium text-gray-700">
+                            <MapPin size={14} className="text-[#8D6E63]" /> {event.location}
+                          </p>
+                        )}
+                        {event.phone && (
+                          <p className="flex items-center gap-1 font-bold text-blue-600">
+                            <Phone size={14} /> 船長電話：
+                            <a href={`tel:${event.phone}`} className="underline">{event.phone}</a>
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 📝 獨立備註欄位 (Remarks) */}
+                    {event.remarks && event.remarks.length > 0 && (
+                      <div className="bg-[#FFF8E7] p-3 rounded-lg border-2 border-dashed border-[#D9B48F] space-y-1.5 mt-2">
+                        <div className="flex items-center gap-1 font-bold text-sm text-[#4A3728] border-b border-[#D9B48F] pb-1">
+                          <FileText size={16} className="text-[#8D6E63]" /> 備註事項：
+                        </div>
+                        <ul className="list-disc list-inside text-xs space-y-1 text-gray-700 font-medium leading-relaxed">
+                          {event.remarks.map((rem, rIdx) => (
+                            <li key={rIdx} className={rem.includes('⚠️') || rem.includes('不退費') ? 'text-red-600 font-bold' : ''}>
+                              {rem}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
 
-              {/* 🌟 AI 智慧顧問模式 (可搜尋、可挑選、自動安插排序) */}
+              {/* 🌟 AI 智慧顧問模式 */}
               <div className="mt-8 pt-4 border-t-2 border-dashed border-[#8D6E63]">
                 <button onClick={() => setShowAI(!showAI)} className="w-full flex items-center justify-center gap-2 bg-black text-white p-3 rounded-xl font-bold shadow-[4px_4px_0px_#D9B48F] active:translate-y-1 active:shadow-[0px_0px_0px_#D9B48F] transition-all">
                   <Sparkles size={20} /> AI 智慧行程顧問
@@ -369,7 +416,7 @@ export default function MyTrip() {
           </div>
         )}
 
-        {/* ================= 記帳分頁 (維持前一版) ================= */}
+        {/* ================= 記帳分頁 ================= */}
         {activeTab === 'ledger' && (
           <div className="animate-fade-in space-y-6">
             <h2 className="font-bold text-xl border-b-4 border-[#D9B48F] inline-block pb-1">Day {activeDay} 每日花費 💰</h2>
@@ -444,7 +491,7 @@ export default function MyTrip() {
           </div>
         )}
 
-        {/* ================= 日記分頁 (維持前一版) ================= */}
+        {/* ================= 日記分頁 ================= */}
         {activeTab === 'diary' && (
           <div className="animate-fade-in space-y-6">
             <h2 className="font-bold text-xl border-b-4 border-[#D9B48F] inline-block pb-1">Day {activeDay} 照片日記 📷</h2>
