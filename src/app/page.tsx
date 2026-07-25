@@ -108,7 +108,7 @@ export default function MyTrip() {
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`, '_blank');
   };
 
-  // 🌟 新功能：一鍵串連當天所有地點（含起點、沿途景點、終點飯店）的多點導航
+  // 🌟 一鍵串連當天所有地點（含起點、沿途景點、終點飯店）的多點導航
   const openFullDayRoute = () => {
     if (!currentDayData || !currentDayData.events) return;
 
@@ -146,3 +146,103 @@ export default function MyTrip() {
   };
 
   return (
+    <div className="min-h-screen bg-[#FDF9F1] text-[#4A3728] font-sans pb-24">
+      <header className="flex justify-between items-center p-4 border-b-2 border-[#8D6E63] bg-[#F5E6D3] rounded-b-2xl">
+        <button className="p-2"><ChevronLeft size={24} /></button>
+        <h1 className="text-xl font-bold tracking-wider">我的旅行 🚗</h1>
+        <button className="p-2"><Share size={24} /></button>
+      </header>
+
+      <main className="p-4 space-y-6">
+        {/* Vios 狀態卡片 */}
+        <section className="bg-white p-4 rounded-tl-3xl rounded-br-3xl rounded-tr-md rounded-bl-md border-2 border-[#8D6E63] shadow-[4px_4px_0px_#8D6E63]">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-bold flex items-center gap-2"><Droplet size={18} className="text-blue-500" /> {tripData.car.model} 狀態</h2>
+            <span className="text-sm bg-[#D7CCC8] px-2 py-1 rounded-full">油量: {tripData.car.currentGas}%</span>
+          </div>
+          <p className="text-sm text-red-600 font-bold">{currentDayData?.gasWarning}</p>
+        </section>
+
+        {/* 預算卡片 */}
+        <section className="grid grid-cols-2 gap-4">
+          <div className="bg-[#EFEBE9] p-3 rounded-xl border-2 border-[#8D6E63] flex flex-col items-center">
+            <span className="text-sm text-gray-600">已付款 ✅</span>
+            <span className="font-bold text-lg">${tripData.budget.totalPaid}</span>
+          </div>
+          <div className="bg-[#FFEBEE] p-3 rounded-xl border-2 border-[#8D6E63] flex flex-col items-center">
+            <span className="text-sm text-red-500">未付款 ⚠️</span>
+            <span className="font-bold text-lg">${tripData.budget.totalUnpaid}</span>
+          </div>
+        </section>
+
+        {/* Day 1 ~ Day 6 切換選單 */}
+        <div className="flex overflow-x-auto gap-2 pb-2">
+          {tripData.days.map((d) => (
+            <button
+              key={d.day}
+              onClick={() => setActiveDay(d.day)}
+              className={`whitespace-nowrap px-4 py-2 rounded-lg border-2 border-[#8D6E63] font-bold transition-all ${
+                activeDay === d.day ? 'bg-[#D9B48F] shadow-[2px_2px_0px_#8D6E63] translate-y-[-2px]' : 'bg-white'
+              }`}
+            >
+              Day {d.day}
+            </button>
+          ))}
+        </div>
+
+        {/* 行程時間軸 */}
+        <section className="space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b-2 border-dashed border-[#8D6E63] pb-2">
+            <h2 className="font-bold text-lg">{currentDayData?.date} - {currentDayData?.summary}</h2>
+            
+            {/* 🗺️ 一鍵當天全行程導航按鈕 */}
+            <button
+              onClick={openFullDayRoute}
+              className="flex items-center gap-1.5 bg-[#D9B48F] hover:bg-[#C8A37E] active:scale-95 text-[#4A3728] px-3 py-1.5 rounded-xl border-2 border-[#8D6E63] font-bold text-xs shadow-[2px_2px_0px_#8D6E63] transition-all"
+            >
+              <Route size={16} />
+              <span>一鍵串連當天全導航</span>
+            </button>
+          </div>
+          
+          <div className="relative border-l-2 border-[#8D6E63] ml-3 pl-6 space-y-6">
+            {currentDayData?.events.map((event, idx) => (
+              <div key={idx} className="relative bg-white p-3 rounded-xl border-2 border-[#8D6E63] shadow-[3px_3px_0px_#8D6E63]">
+                <div className="absolute -left-[35px] top-4 w-4 h-4 bg-[#D9B48F] rounded-full border-2 border-[#8D6E63]"></div>
+                
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold">{event.time} {event.title}</h3>
+                    {event.note && <p className="text-sm text-gray-500 mt-1">{event.note}</p>}
+                    {event.cost && (
+                      <span className={`text-xs px-2 py-1 rounded-full mt-2 inline-block border ${event.status === 'paid' ? 'bg-green-100 border-green-400' : 'bg-red-100 border-red-400'}`}>
+                        {event.status === 'paid' ? '已付' : '未付'} ${event.cost}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* 單點導航按鈕 */}
+                  {event.location && (
+                    <button 
+                      onClick={() => openSingleGoogleMap(event.location)}
+                      title="單獨導航此地點"
+                      className="bg-[#F5E6D3] p-2 rounded-full border-2 border-[#8D6E63] active:bg-[#D9B48F] flex-shrink-0 ml-2 shadow-[1px_1px_0px_#8D6E63]"
+                    >
+                      <Navigation size={18} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      <footer className="fixed bottom-0 w-full bg-[#F5E6D3] border-t-2 border-[#8D6E63] flex justify-around p-3 pb-6">
+        <button className="flex flex-col items-center text-[#8D6E63]"><MapPin size={24} /><span className="text-xs font-bold mt-1">行程</span></button>
+        <button className="flex flex-col items-center text-gray-400"><Wallet size={24} /><span className="text-xs font-bold mt-1">記帳</span></button>
+        <button className="flex flex-col items-center text-gray-400"><Camera size={24} /><span className="text-xs font-bold mt-1">日記</span></button>
+      </footer>
+    </div>
+  );
+}
