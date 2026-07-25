@@ -216,52 +216,6 @@ export default function MyTrip() {
     }
   };
 
-  const askAIForSuggestions = (query: string) => {
-    if (!query.trim()) return;
-    setIsThinking(true);
-    setAiSuggestions([]);
-    
-    setTimeout(() => {
-      let suggestions = [];
-      const lowerQuery = query.toLowerCase();
-
-      if (lowerQuery.includes('咖啡') || lowerQuery.includes('海景')) {
-        suggestions = [
-          { 
-            id: `ai-s1-${Date.now()}`, time: "14:30", title: "都蘭海角咖啡 Dulan Cape Café", location: "都蘭海角咖啡", type: "spot", note: "無敵海景與大草皮", 
-            remarks: ["建議提前打電話訂位", "海風較大建議帶薄外套", "低消為一杯飲品"] 
-          }
-        ];
-      } else if (lowerQuery.includes('夜市') || lowerQuery.includes('小吃')) {
-        suggestions = [
-          { 
-            id: `ai-s5-${Date.now()}`, time: "21:30", title: "在地隱藏版深夜食堂", location: "東大門夜市", type: "spot", note: "在地人排隊美食", 
-            remarks: ["現金交易為主，請準備百鈔", "周邊停車較不便，建議步行前往"] 
-          }
-        ];
-      } else if (activeDay === 1) {
-        suggestions = [
-          { 
-            id: `ai-s2-${Date.now()}`, time: "13:30", title: "大武之心南迴驛", location: "大武之心南迴驛", type: "spot", note: "南迴最美休息站", 
-            remarks: ["假日車位較少，請耐心等候", "二樓有無敵海景觀景台"] 
-          },
-          { 
-            id: `ai-s3-${Date.now()}`, time: "14:30", title: "多良車站", location: "多良車站", type: "spot", note: "全台最美車站", 
-            remarks: ["目前需收取入園清潔費10元", "火車時刻表可先上網查詢", "入園需爬一小段陡坡"] 
-          }
-        ];
-      } else {
-        suggestions = [
-          { 
-            id: `ai-s4-${Date.now()}`, time: "15:00", title: "在地秘境探險", location: "推薦秘境", type: "spot", note: "高評價隱藏地點", 
-            remarks: ["請注意防蚊蟲", "建議穿著好走的運動鞋", "垃圾請隨手帶走維護環境"] 
-          }
-        ];
-      }
-      setAiSuggestions(suggestions);
-      setIsThinking(false);
-    }, 1200);
-  };
 
   const addSuggestedEvent = (suggestion: any) => {
     if (!currentDayData) return;
@@ -275,6 +229,53 @@ export default function MyTrip() {
     setTrip({ ...trip, days: trip.days.map(d => d.day === activeDay ? { ...d, events: newEvents } : d) });
     setAiSuggestions(aiSuggestions.filter(s => s.id !== suggestion.id));
     setCustomQuery('');
+  };
+
+    const askAIForSuggestions = (query: string) => {
+    if (!query.trim()) return;
+    setIsThinking(true);
+    setAiSuggestions([]);
+    
+    setTimeout(() => {
+      let suggestions = [];
+      const lowerQuery = query.toLowerCase();
+
+      // 1. 判斷如果是輸入「加油、中油、全國」等字眼，自動轉為加油站模式
+      if (lowerQuery.includes('加油') || lowerQuery.includes('中油') || lowerQuery.includes('交流道')) {
+        suggestions = [
+          { 
+            id: `ai-gas-${Date.now()}`, time: "13:30", 
+            title: query, // 直接使用你輸入的名字！
+            location: query, // 直接定位你輸入的地點！
+            type: "spot", note: "順路補充油水與洗手間休息", 
+            remarks: ["建議加滿再上路", "可順便洗車或檢查胎壓", "長途駕駛前請確保精神狀況"] 
+          }
+        ];
+      } 
+      // 2. 判斷是否為咖啡/海景
+      else if (lowerQuery.includes('咖啡') || lowerQuery.includes('海景')) {
+        suggestions = [
+          { 
+            id: `ai-cafe-${Date.now()}`, time: "14:30", 
+            title: query, location: query, type: "spot", note: "無敵海景放鬆行程", 
+            remarks: ["建議提前打電話訂位", "海風較大建議帶薄外套", "留意店家低消規定"] 
+          }
+        ];
+      } 
+      // 3. 通用自訂輸入：不管輸入什麼，直接將你的字眼轉為正式行程！
+      else {
+        suggestions = [
+          { 
+            id: `ai-custom-${Date.now()}`, time: "15:00", 
+            title: query, location: query, type: "spot", note: "自訂新增：AI 幫您安插的專屬行程", 
+            remarks: ["請注意營業時間與公休日", "出發前可點擊導航確認車程是否順暢"] 
+          }
+        ];
+      }
+      
+      setAiSuggestions(suggestions);
+      setIsThinking(false);
+    }, 1200);
   };
 
   const saveExpense = () => {
