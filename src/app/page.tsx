@@ -1,8 +1,8 @@
 'use client';
 import { useState, useRef } from 'react';
-import { MapPin, Navigation, Droplet, Wallet, Camera, ChevronLeft, Share, Route, Sparkles, Clock, Coffee, Fuel, Pencil, Trash2, Plus, ImagePlus, X } from 'lucide-react';
+import { MapPin, Navigation, Droplet, Wallet, Camera, ChevronLeft, Share, Route, Sparkles, Clock, Coffee, Fuel, Pencil, Trash2, Plus, ImagePlus, X, Bot, PlusCircle } from 'lucide-react';
 
-// --- 初始資料庫 (新增 expenses 陣列以支援每日獨立記帳) ---
+// --- 初始資料庫 ---
 const initialTripData = {
   tripName: "花東六天五夜熱血環島",
   car: { model: "Toyota Vios", tankCapacity: 35, currentGas: 100, efficiency: 14 },
@@ -119,29 +119,19 @@ export default function MyTrip() {
   
   // AI 相關 State
   const [showAI, setShowAI] = useState(false);
-  const [customSpotInput, setCustomSpotInput] = useState('');
+  const [customQuery, setCustomQuery] = useState('');
+  const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
+  const [isThinking, setIsThinking] = useState(false);
   
-  // 記帳相關 State
+  // 記帳與相片 State
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const [expenseForm, setExpenseForm] = useState({ title: '', amount: '', status: 'paid', category: '飲食' });
-
-  // 日記相片 State (依天數儲存本機預覽網址)
   const [dayPhotos, setDayPhotos] = useState<Record<number, string[]>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentDayData = trip.days.find(d => d.day === activeDay);
 
-  // 計算總花費
-  const totalBudget = trip.days.reduce((acc, day) => {
-    day.expenses.forEach(e => {
-      if (e.status === 'paid') acc.paid += Number(e.amount);
-      else acc.unpaid += Number(e.amount);
-    });
-    return acc;
-  }, { paid: 0, unpaid: 0 });
-
-  // 每日花費計算
   const dailyPaid = currentDayData?.expenses.filter(e => e.status === 'paid').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
   const dailyUnpaid = currentDayData?.expenses.filter(e => e.status === 'unpaid').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
@@ -161,18 +151,14 @@ export default function MyTrip() {
     window.open(`https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${waypoints ? `&waypoints=${waypoints}` : ''}`, '_blank');
   };
 
-  // 📤 分享功能
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: trip.tripName, text: '來看看我排的花東六天五夜環島行程！', url: window.location.href });
-      } catch (err) { console.log('分享取消'); }
-    } else {
-      alert("行程連結已複製！");
-    }
+        await navigator.share({ title: trip.tripName, text: '我的花東環島行程，來看看吧！', url: window.location.href });
+      } catch (err) {}
+    } else alert("行程連結已複製！");
   };
 
-  // ⏰ 變更時間連動
   const handleDepartureTimeChange = (newTime: string) => {
     if (!currentDayData) return;
     const oldStartTime = currentDayData.events[0].time;
@@ -181,37 +167,66 @@ export default function MyTrip() {
     setTrip({ ...trip, days: trip.days.map(d => d.day === activeDay ? { ...d, events: updatedEvents } : d) });
   };
 
-  // ✨ AI 智慧安插景點
-  const handleAIAddSpot = (type: 'gas' | 'food' | 'custom') => {
+  // 🗑️ 刪除單個行程
+  const deleteEvent = (eventId: string) => {
     if (!currentDayData) return;
-    const newEvents = [...currentDayData.events];
-    const lastEventTime = newEvents[newEvents.length - 1].time;
-    
-    if (type === 'gas') {
-      newEvents.splice(1, 0, { id: `ai-${Date.now()}`, time: addMinutes(newEvents[0].time, 60), title: "順路加油 (AI建議)", location: "中油加油站", type: "spot", note: "保持油量安全滿載" });
-      for (let i = 2; i < newEvents.length; i++) newEvents[i].time = addMinutes(newEvents[i].time, 15);
-    } else if (type === 'food') {
-       newEvents.push({ id: `ai-${Date.now()}`, time: addMinutes(lastEventTime, 60), title: "在地美食 (AI推薦)", location: "在地推薦餐廳", type: "spot", note: "高分評價餐廳" });
-    } else if (type === 'custom' && customSpotInput) {
-       newEvents.push({ id: `ai-${Date.now()}`, time: addMinutes(lastEventTime, 90), title: `${customSpotInput} (AI安插)`, location: customSpotInput, type: "spot", note: "根據你的喜好加入的行程" });
-       setCustomSpotInput('');
+    if (confirm("確定要刪除這個行程嗎？")) {
+      const updatedEvents = currentDayData.events.filter(e => e.id !== eventId);
+      setTrip({ ...trip, days: trip.days.map(d => d.day === activeDay ? { ...d, events: updatedEvents } : d) });
     }
-
-    setTrip({ ...trip, days: trip.days.map(d => d.day === activeDay ? { ...d, events: newEvents } : d) });
-    setShowAI(false);
   };
 
-  // 💰 記帳 CRUD 功能
+  // 🤖 呼叫 AI 取得建議 (模擬非同步)
+  const askAIForSuggestions = (query: string) => {
+    if (!query.trim()) return;
+    setIsThinking(true);
+    setAiSuggestions([]);
+    
+    // 模擬 AI 思考時間，並根據關鍵字給出建議與自動推算順路時間
+    setTimeout(() => {
+      let suggestions = [];
+      if (activeDay === 1) {
+        suggestions = [
+          { id: `ai-s1-${Date.now()}`, time: "13:30", title: `${query}推薦：大武之心南迴驛`, location: "大武之心南迴驛", type: "spot", note: "南迴最美休息站，非常順路" },
+          { id: `ai-s2-${Date.now()}`, time: "14:30", title: `${query}推薦：多良車站`, location: "多良車站", type: "spot", note: "全台最美車站，適合短暫停留" }
+        ];
+      } else {
+        suggestions = [
+          { id: `ai-s3-${Date.now()}`, time: "16:00", title: `AI 嚴選：在地 ${query}`, location: `${query} 推薦景點`, type: "spot", note: "評價極高的順路選擇" }
+        ];
+      }
+      setAiSuggestions(suggestions);
+      setIsThinking(false);
+    }, 1200);
+  };
+
+  // ➕ 將 AI 建議加入行程，並自動重新排序
+  const addSuggestedEvent = (suggestion: any) => {
+    if (!currentDayData) return;
+    
+    const newEvents = [...currentDayData.events, suggestion];
+    
+    // 根據時間自動排序，確保路線順暢
+    newEvents.sort((a, b) => {
+      const timeA = a.time.split(':').map(Number);
+      const timeB = b.time.split(':').map(Number);
+      return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+    });
+
+    setTrip({ ...trip, days: trip.days.map(d => d.day === activeDay ? { ...d, events: newEvents } : d) });
+    setAiSuggestions(aiSuggestions.filter(s => s.id !== suggestion.id)); // 移除已新增的選項
+    setCustomQuery(''); // 清空搜尋列
+  };
+
+  // 💰 記帳功能
   const saveExpense = () => {
     if (!currentDayData || !expenseForm.title || !expenseForm.amount) return;
     let updatedExpenses = [...currentDayData.expenses];
-    
     if (editingExpenseId) {
       updatedExpenses = updatedExpenses.map(e => e.id === editingExpenseId ? { ...e, ...expenseForm, amount: Number(expenseForm.amount) } : e);
     } else {
       updatedExpenses.push({ id: `exp-${Date.now()}`, ...expenseForm, amount: Number(expenseForm.amount) });
     }
-    
     setTrip({ ...trip, days: trip.days.map(d => d.day === activeDay ? { ...d, expenses: updatedExpenses } : d) });
     setShowExpenseForm(false);
     setEditingExpenseId(null);
@@ -224,33 +239,13 @@ export default function MyTrip() {
     setTrip({ ...trip, days: trip.days.map(d => d.day === activeDay ? { ...d, expenses: updatedExpenses } : d) });
   };
 
-  // 📷 日記上傳照片
+  // 📷 日記上傳
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newPhotos = Array.from(e.target.files).map(file => URL.createObjectURL(file));
-      setDayPhotos(prev => ({
-        ...prev,
-        [activeDay]: [...(prev[activeDay] || []), ...newPhotos]
-      }));
+      setDayPhotos(prev => ({ ...prev, [activeDay]: [...(prev[activeDay] || []), ...newPhotos] }));
     }
   };
-
-  // --- 共用 Day 選擇器 UI ---
-  const DaySelector = () => (
-    <div className="flex overflow-x-auto gap-2 pb-2 mb-4">
-      {trip.days.map((d) => (
-        <button
-          key={d.day}
-          onClick={() => setActiveDay(d.day)}
-          className={`whitespace-nowrap px-4 py-2 rounded-lg border-2 border-[#8D6E63] font-bold transition-all ${
-            activeDay === d.day ? 'bg-[#D9B48F] shadow-[2px_2px_0px_#8D6E63] translate-y-[-2px]' : 'bg-white'
-          }`}
-        >
-          Day {d.day}
-        </button>
-      ))}
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-[#FDF9F1] text-[#4A3728] font-sans pb-28">
@@ -261,8 +256,14 @@ export default function MyTrip() {
       </header>
 
       <main className="p-4">
-        {/* 全域共用 Day 選擇器 */}
-        <DaySelector />
+        {/* 全域 Day 選擇器 */}
+        <div className="flex overflow-x-auto gap-2 pb-2 mb-4">
+          {trip.days.map((d) => (
+            <button key={d.day} onClick={() => setActiveDay(d.day)} className={`whitespace-nowrap px-4 py-2 rounded-lg border-2 border-[#8D6E63] font-bold transition-all ${activeDay === d.day ? 'bg-[#D9B48F] shadow-[2px_2px_0px_#8D6E63] translate-y-[-2px]' : 'bg-white'}`}>
+              Day {d.day}
+            </button>
+          ))}
+        </div>
 
         {/* ================= 行程分頁 ================= */}
         {activeTab === 'itinerary' && (
@@ -286,58 +287,81 @@ export default function MyTrip() {
               <div className="flex items-center gap-2 bg-[#F5E6D3] p-3 rounded-xl border-2 border-[#8D6E63]">
                 <Clock size={20} className="text-[#8D6E63]" />
                 <label className="font-bold text-sm">首站出發時間：</label>
-                <input 
-                  type="time" 
-                  value={currentDayData?.events[0].time} 
-                  onChange={(e) => handleDepartureTimeChange(e.target.value)}
-                  className="bg-white border-2 border-[#8D6E63] rounded px-2 py-1 font-bold outline-none"
-                />
+                <input type="time" value={currentDayData?.events[0]?.time || "09:00"} onChange={(e) => handleDepartureTimeChange(e.target.value)} className="bg-white border-2 border-[#8D6E63] rounded px-2 py-1 font-bold outline-none" />
               </div>
               
               <div className="relative border-l-2 border-[#8D6E63] ml-3 pl-6 space-y-6">
                 {currentDayData?.events.map((event) => (
-                  <div key={event.id} className="relative bg-white p-3 rounded-xl border-2 border-[#8D6E63] shadow-[3px_3px_0px_#8D6E63]">
+                  <div key={event.id} className="relative bg-white p-3 rounded-xl border-2 border-[#8D6E63] shadow-[3px_3px_0px_#8D6E63] flex flex-col">
                     <div className="absolute -left-[35px] top-4 w-4 h-4 bg-[#D9B48F] rounded-full border-2 border-[#8D6E63]"></div>
-                    <div className="flex justify-between items-start">
-                      <div>
+                    
+                    <div className="flex justify-between items-start w-full">
+                      <div className="flex-1 pr-2">
                         <h3 className="font-bold text-lg">{event.time} {event.title}</h3>
                         {event.note && <p className="text-sm text-gray-600 mt-1">{event.note}</p>}
                       </div>
-                      {event.location && (
-                        <button onClick={() => openSingleGoogleMap(event.location)} className="bg-[#F5E6D3] p-2 rounded-full border-2 border-[#8D6E63] active:bg-[#D9B48F] flex-shrink-0 ml-2 shadow-[1px_1px_0px_#8D6E63]">
-                          <Navigation size={18} />
+                      
+                      {/* 功能按鈕區：包含導航與刪除 */}
+                      <div className="flex gap-2 flex-shrink-0">
+                        {event.location && (
+                          <button onClick={() => openSingleGoogleMap(event.location)} className="bg-[#F5E6D3] p-2 rounded-full border-2 border-[#8D6E63] active:bg-[#D9B48F] shadow-[1px_1px_0px_#8D6E63]">
+                            <Navigation size={18} />
+                          </button>
+                        )}
+                        <button onClick={() => deleteEvent(event.id)} className="bg-red-50 text-red-500 p-2 rounded-full border-2 border-red-200 hover:bg-red-100 active:bg-red-200 transition-colors">
+                          <Trash2 size={18} />
                         </button>
-                      )}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* AI 智慧安插 */}
-              <div className="mt-6 pt-4 border-t-2 border-dashed border-[#8D6E63]">
+              {/* 🌟 AI 智慧顧問模式 (可搜尋、可挑選、自動安插排序) */}
+              <div className="mt-8 pt-4 border-t-2 border-dashed border-[#8D6E63]">
                 <button onClick={() => setShowAI(!showAI)} className="w-full flex items-center justify-center gap-2 bg-black text-white p-3 rounded-xl font-bold shadow-[4px_4px_0px_#D9B48F] active:translate-y-1 active:shadow-[0px_0px_0px_#D9B48F] transition-all">
-                  <Sparkles size={20} /> AI 智慧安插行程
+                  <Sparkles size={20} /> AI 智慧行程顧問
                 </button>
+                
                 {showAI && (
-                  <div className="p-4 bg-white border-2 border-[#8D6E63] rounded-xl mt-4 space-y-4 animate-fade-in">
-                    <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => handleAIAddSpot('gas')} className="flex flex-col items-center p-2 border-2 border-[#8D6E63] rounded-xl font-bold active:bg-[#F5E6D3]">
-                        <Fuel className="mb-1 text-blue-500" size={20} />找加油站
-                      </button>
-                      <button onClick={() => handleAIAddSpot('food')} className="flex flex-col items-center p-2 border-2 border-[#8D6E63] rounded-xl font-bold active:bg-[#F5E6D3]">
-                        <Coffee className="mb-1 text-orange-500" size={20} />找美食
-                      </button>
-                    </div>
+                  <div className="p-4 bg-white border-2 border-[#8D6E63] rounded-xl mt-4 space-y-4 animate-fade-in shadow-[4px_4px_0px_#8D6E63]">
+                    <p className="text-sm font-bold text-gray-600 flex items-center gap-1"><Bot size={16}/> 告訴我你想找什麼，我來幫你找順路的選項！</p>
                     <div className="flex gap-2">
                       <input 
                         type="text" 
-                        placeholder="例如：海景咖啡廳..." 
-                        value={customSpotInput}
-                        onChange={(e) => setCustomSpotInput(e.target.value)}
-                        className="flex-1 border-2 border-[#8D6E63] p-2 rounded-xl outline-none"
+                        placeholder="例如：海景咖啡廳、私房景點、加油站..." 
+                        value={customQuery}
+                        onChange={(e) => setCustomQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && askAIForSuggestions(customQuery)}
+                        className="flex-1 border-2 border-[#8D6E63] p-2 rounded-xl outline-none focus:border-black"
                       />
-                      <button onClick={() => handleAIAddSpot('custom')} className="bg-[#D9B48F] px-4 rounded-xl border-2 border-[#8D6E63] font-bold">新增</button>
+                      <button onClick={() => askAIForSuggestions(customQuery)} className="bg-[#D9B48F] px-4 rounded-xl border-2 border-[#8D6E63] font-bold active:bg-[#C8A37E]">
+                        搜尋
+                      </button>
                     </div>
+
+                    {isThinking && (
+                      <div className="text-center py-4 text-gray-500 font-bold animate-pulse">
+                        🧠 AI 正在分析路線與搜尋...
+                      </div>
+                    )}
+
+                    {!isThinking && aiSuggestions.length > 0 && (
+                      <div className="space-y-3 mt-4 pt-4 border-t border-dashed border-gray-300">
+                        <h4 className="font-bold text-sm text-green-700">為您推薦以下順路選項：</h4>
+                        {aiSuggestions.map(suggestion => (
+                          <div key={suggestion.id} className="flex justify-between items-center bg-[#FDF9F1] p-3 rounded-lg border border-[#8D6E63]">
+                            <div>
+                              <p className="font-bold text-sm">{suggestion.time} {suggestion.title}</p>
+                              <p className="text-xs text-gray-500 mt-1">{suggestion.note}</p>
+                            </div>
+                            <button onClick={() => addSuggestedEvent(suggestion)} className="flex items-center gap-1 bg-white border-2 border-black px-2 py-1 rounded-lg text-xs font-bold shadow-[2px_2px_0px_black] active:translate-y-0.5 active:shadow-[0px_0px_0px_black]">
+                              <PlusCircle size={14}/> 加入
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -345,7 +369,7 @@ export default function MyTrip() {
           </div>
         )}
 
-        {/* ================= 記帳分頁 ================= */}
+        {/* ================= 記帳分頁 (維持前一版) ================= */}
         {activeTab === 'ledger' && (
           <div className="animate-fade-in space-y-6">
             <h2 className="font-bold text-xl border-b-4 border-[#D9B48F] inline-block pb-1">Day {activeDay} 每日花費 💰</h2>
@@ -361,16 +385,10 @@ export default function MyTrip() {
               </div>
             </section>
             
-            {/* 記帳明細列表 */}
             <div className="bg-white p-4 rounded-xl border-2 border-[#8D6E63] shadow-[4px_4px_0px_#8D6E63]">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-bold text-lg">款項明細</h3>
-                <button 
-                  onClick={() => { setEditingExpenseId(null); setExpenseForm({ title: '', amount: '', status: 'paid', category: '飲食' }); setShowExpenseForm(true); }}
-                  className="bg-[#D9B48F] p-1.5 rounded-full border-2 border-[#8D6E63] active:scale-95"
-                >
-                  <Plus size={20} />
-                </button>
+                <button onClick={() => { setEditingExpenseId(null); setExpenseForm({ title: '', amount: '', status: 'paid', category: '飲食' }); setShowExpenseForm(true); }} className="bg-[#D9B48F] p-1.5 rounded-full border-2 border-[#8D6E63] active:scale-95"><Plus size={20} /></button>
               </div>
 
               {currentDayData?.expenses.length === 0 ? (
@@ -382,9 +400,7 @@ export default function MyTrip() {
                       <div>
                         <span className="text-xs bg-[#F5E6D3] px-2 py-0.5 rounded-full border border-[#8D6E63] mr-2">{exp.category}</span>
                         <span className="font-bold text-lg">{exp.title}</span>
-                        <div className={`text-sm font-bold mt-1 ${exp.status === 'paid' ? 'text-green-600' : 'text-red-500'}`}>
-                          {exp.status === 'paid' ? '已付' : '未付'} ${exp.amount}
-                        </div>
+                        <div className={`text-sm font-bold mt-1 ${exp.status === 'paid' ? 'text-green-600' : 'text-red-500'}`}>{exp.status === 'paid' ? '已付' : '未付'} ${exp.amount}</div>
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => { setEditingExpenseId(exp.id); setExpenseForm({ title: exp.title, amount: String(exp.amount), status: exp.status, category: exp.category || '其他' }); setShowExpenseForm(true); }} className="p-2 bg-gray-100 rounded-full border border-gray-300 text-gray-600"><Pencil size={16}/></button>
@@ -396,7 +412,6 @@ export default function MyTrip() {
               )}
             </div>
 
-            {/* 新增/修改 表單 Modal */}
             {showExpenseForm && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                 <div className="bg-[#FDF9F1] w-full max-w-sm p-6 rounded-2xl border-4 border-[#8D6E63] shadow-[8px_8px_0px_#8D6E63]">
@@ -421,9 +436,7 @@ export default function MyTrip() {
                         <option value="unpaid">⚠️ 未付款</option>
                       </select>
                     </div>
-                    <button onClick={saveExpense} className="w-full bg-[#D9B48F] border-2 border-[#8D6E63] p-3 rounded-xl font-bold shadow-[2px_2px_0px_#8D6E63] active:translate-y-1 active:shadow-none transition-all">
-                      儲存紀錄
-                    </button>
+                    <button onClick={saveExpense} className="w-full bg-[#D9B48F] border-2 border-[#8D6E63] p-3 rounded-xl font-bold shadow-[2px_2px_0px_#8D6E63] active:translate-y-1 active:shadow-none transition-all">儲存紀錄</button>
                   </div>
                 </div>
               </div>
@@ -431,35 +444,19 @@ export default function MyTrip() {
           </div>
         )}
 
-        {/* ================= 日記分頁 ================= */}
+        {/* ================= 日記分頁 (維持前一版) ================= */}
         {activeTab === 'diary' && (
           <div className="animate-fade-in space-y-6">
             <h2 className="font-bold text-xl border-b-4 border-[#D9B48F] inline-block pb-1">Day {activeDay} 照片日記 📷</h2>
-            
-            {/* 隱藏的實體檔案上傳 Input */}
-            <input 
-              type="file" 
-              accept="image/*" 
-              multiple 
-              ref={fileInputRef} 
-              onChange={handlePhotoUpload} 
-              className="hidden" 
-            />
-
+            <input type="file" accept="image/*" multiple ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" />
             {(dayPhotos[activeDay] || []).length === 0 ? (
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-white p-8 rounded-xl border-2 border-[#8D6E63] text-center border-dashed cursor-pointer hover:bg-[#F5E6D3] transition-colors"
-              >
+              <div onClick={() => fileInputRef.current?.click()} className="bg-white p-8 rounded-xl border-2 border-[#8D6E63] text-center border-dashed cursor-pointer hover:bg-[#F5E6D3] transition-colors">
                 <ImagePlus size={48} className="mx-auto text-gray-400 mb-2" />
                 <p className="font-bold text-gray-500 mb-4">這天還沒有上傳照片喔！<br/>點擊這裡從手機相簿挑選吧！</p>
               </div>
             ) : (
               <div className="space-y-4">
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full flex justify-center items-center gap-2 bg-[#D9B48F] border-2 border-[#8D6E63] p-3 rounded-xl font-bold shadow-[2px_2px_0px_#8D6E63] active:translate-y-1 active:shadow-none"
-                >
+                <button onClick={() => fileInputRef.current?.click()} className="w-full flex justify-center items-center gap-2 bg-[#D9B48F] border-2 border-[#8D6E63] p-3 rounded-xl font-bold shadow-[2px_2px_0px_#8D6E63] active:translate-y-1 active:shadow-none">
                   <ImagePlus size={20} /> 繼續上傳照片
                 </button>
                 <div className="grid grid-cols-2 gap-3">
@@ -475,20 +472,10 @@ export default function MyTrip() {
         )}
       </main>
 
-      {/* 底部導航列 */}
       <footer className="fixed bottom-0 w-full bg-[#F5E6D3] border-t-2 border-[#8D6E63] flex justify-around p-3 pb-8 z-40">
-        <button onClick={() => setActiveTab('itinerary')} className={`flex flex-col items-center w-1/3 transition-colors ${activeTab === 'itinerary' ? 'text-[#8D6E63]' : 'text-gray-400'}`}>
-          <MapPin size={24} className={activeTab === 'itinerary' ? 'fill-[#D9B48F]' : ''} />
-          <span className="text-xs font-bold mt-1">行程</span>
-        </button>
-        <button onClick={() => setActiveTab('ledger')} className={`flex flex-col items-center w-1/3 transition-colors ${activeTab === 'ledger' ? 'text-[#8D6E63]' : 'text-gray-400'}`}>
-          <Wallet size={24} className={activeTab === 'ledger' ? 'fill-[#D9B48F]' : ''} />
-          <span className="text-xs font-bold mt-1">記帳</span>
-        </button>
-        <button onClick={() => setActiveTab('diary')} className={`flex flex-col items-center w-1/3 transition-colors ${activeTab === 'diary' ? 'text-[#8D6E63]' : 'text-gray-400'}`}>
-          <Camera size={24} className={activeTab === 'diary' ? 'fill-[#D9B48F]' : ''} />
-          <span className="text-xs font-bold mt-1">日記</span>
-        </button>
+        <button onClick={() => setActiveTab('itinerary')} className={`flex flex-col items-center w-1/3 transition-colors ${activeTab === 'itinerary' ? 'text-[#8D6E63]' : 'text-gray-400'}`}><MapPin size={24} className={activeTab === 'itinerary' ? 'fill-[#D9B48F]' : ''} /><span className="text-xs font-bold mt-1">行程</span></button>
+        <button onClick={() => setActiveTab('ledger')} className={`flex flex-col items-center w-1/3 transition-colors ${activeTab === 'ledger' ? 'text-[#8D6E63]' : 'text-gray-400'}`}><Wallet size={24} className={activeTab === 'ledger' ? 'fill-[#D9B48F]' : ''} /><span className="text-xs font-bold mt-1">記帳</span></button>
+        <button onClick={() => setActiveTab('diary')} className={`flex flex-col items-center w-1/3 transition-colors ${activeTab === 'diary' ? 'text-[#8D6E63]' : 'text-gray-400'}`}><Camera size={24} className={activeTab === 'diary' ? 'fill-[#D9B48F]' : ''} /><span className="text-xs font-bold mt-1">日記</span></button>
       </footer>
     </div>
   );
