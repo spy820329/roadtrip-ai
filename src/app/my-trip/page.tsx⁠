@@ -1,0 +1,147 @@
+'use client';
+import { useState } from 'react';
+import { MapPin, Navigation, Droplet, Wallet, Camera, ChevronLeft, Share } from 'lucide-react';
+
+// --- 1. 資料模型 (Data Model) ---
+const tripData = {
+  tripName: "花東六天五夜熱血環島",
+  car: {
+    model: "Toyota Vios",
+    tankCapacity: 35, // 第一代 Vios 油箱 35L
+    currentGas: 100, // 剩餘油量百分比
+    efficiency: 14, // 預估 14 km/L
+  },
+  budget: {
+    totalPaid: 8645,
+    totalUnpaid: 4600,
+  },
+  days: [
+    {
+      day: 1,
+      date: "7/26 (日)",
+      summary: "台南出發 ➔ 台東",
+      gasWarning: "⚠️ 台南至台東約 160km，出發前請確認油表，預計消耗 1/3 桶油。",
+      events: [
+        { time: "12:00", title: "出發", location: "台南", type: "drive" },
+        { time: "15:00", title: "抵達台東", location: "蘋果商務旅店", type: "hotel", cost: 1770, status: "paid", lat: 22.756, lng: 121.150 },
+        { time: "18:30", title: "逛鐵花村、台東夜市", location: "鐵花村", type: "spot", note: "美食推薦：林家臭豆腐", lat: 22.752, lng: 121.147 }
+      ]
+    },
+    {
+      day: 2,
+      date: "7/27 (一)",
+      summary: "台東 ➔ 綠島探險",
+      gasWarning: "🅿️ 車輛停放富岡漁港，無需加油。",
+      events: [
+        { time: "11:30", title: "搭船 (綠島之星)", location: "富岡漁港", type: "boat" },
+        { time: "14:00", title: "藍洞探險", location: "綠島", type: "spot" },
+        { time: "20:00", title: "夜探梅花鹿、看流星", location: "綠島", type: "spot" },
+        { time: "22:00", title: "夜宿柴口岸", location: "綠島", type: "hotel", cost: 4600, status: "unpaid", note: "含船票與體驗" }
+      ]
+    },
+    // Day 3 ~ Day 6 資料依此類推，此處省略部分以保持代碼簡潔
+  ],
+  packingList: ["6件衣服", "4件短褲2件長褲", "諾恩墨鏡", "3個豆腐頭", "泳衣", "盥洗用品", "毛巾", "牙刷牙膏", "隱形眼鏡藥水", "保養品", "防曬", "手持電扇"]
+};
+
+export default function MyTrip() {
+  const [activeDay, setActiveDay] = useState(1);
+  const currentDayData = tripData.days.find(d => d.day === activeDay);
+
+  // 一鍵導航功能 (呼叫 Google Maps)
+  const openGoogleMaps = (lat: number, lng: number, place: string) => {
+    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${place}`, '_blank');
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FDF9F1] text-[#4A3728] font-sans pb-24">
+      {/* 頂部導航 (手繪感) */}
+      <header className="flex justify-between items-center p-4 border-b-2 border-[#8D6E63] bg-[#F5E6D3] rounded-b-2xl">
+        <button className="p-2"><ChevronLeft size={24} /></button>
+        <h1 className="text-xl font-bold tracking-wider">我的旅行 🚐</h1>
+        <button className="p-2"><Share size={24} /></button>
+      </header>
+
+      <main className="p-4 space-y-6">
+        {/* Vios 油耗與加油提醒 (AI 預測模組) */}
+        <section className="bg-white p-4 rounded-tl-3xl rounded-br-3xl rounded-tr-md rounded-bl-md border-2 border-[#8D6E63] shadow-[4px_4px_0px_#8D6E63]">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-bold flex items-center gap-2"><Droplet size={18} className="text-blue-500" /> {tripData.car.model} 狀態</h2>
+            <span className="text-sm bg-[#D7CCC8] px-2 py-1 rounded-full">油量: {tripData.car.currentGas}%</span>
+          </div>
+          <p className="text-sm text-red-600 font-bold">{currentDayData?.gasWarning}</p>
+        </section>
+
+        {/* 預算記帳 (手繪感卡片) */}
+        <section className="grid grid-cols-2 gap-4">
+          <div className="bg-[#EFEBE9] p-3 rounded-xl border-2 border-[#8D6E63] flex flex-col items-center">
+            <span className="text-sm text-gray-600">已付款 ✅</span>
+            <span className="font-bold text-lg">${tripData.budget.totalPaid}</span>
+          </div>
+          <div className="bg-[#FFEBEE] p-3 rounded-xl border-2 border-[#8D6E63] flex flex-col items-center">
+            <span className="text-sm text-red-500">未付款 ⚠️</span>
+            <span className="font-bold text-lg">${tripData.budget.totalUnpaid}</span>
+          </div>
+        </section>
+
+        {/* 天數切換 (手繪標籤) */}
+        <div className="flex overflow-x-auto gap-2 pb-2">
+          {tripData.days.map((d) => (
+            <button
+              key={d.day}
+              onClick={() => setActiveDay(d.day)}
+              className={`whitespace-nowrap px-4 py-2 rounded-lg border-2 border-[#8D6E63] font-bold transition-all ${
+                activeDay === d.day ? 'bg-[#D9B48F] shadow-[2px_2px_0px_#8D6E63] translate-y-[-2px]' : 'bg-white'
+              }`}
+            >
+              Day {d.day}
+            </button>
+          ))}
+        </div>
+
+        {/* 行程時間軸 */}
+        <section className="space-y-4">
+          <h2 className="font-bold text-lg border-b-2 border-dashed border-[#8D6E63] pb-1">{currentDayData?.date} - {currentDayData?.summary}</h2>
+          
+          <div className="relative border-l-2 border-[#8D6E63] ml-3 pl-6 space-y-6">
+            {currentDayData?.events.map((event, idx) => (
+              <div key={idx} className="relative bg-white p-3 rounded-xl border-2 border-[#8D6E63] shadow-[3px_3px_0px_#8D6E63]">
+                {/* 時間軸圓點 */}
+                <div className="absolute -left-[35px] top-4 w-4 h-4 bg-[#D9B48F] rounded-full border-2 border-[#8D6E63]"></div>
+                
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold">{event.time} {event.title}</h3>
+                    {event.note && <p className="text-sm text-gray-500 mt-1">{event.note}</p>}
+                    {event.cost && (
+                      <span className={`text-xs px-2 py-1 rounded-full mt-2 inline-block border ${event.status === 'paid' ? 'bg-green-100 border-green-400' : 'bg-red-100 border-red-400'}`}>
+                        {event.status === 'paid' ? '已付' : '未付'} ${event.cost}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Google Maps 一鍵導航 */}
+                  {event.lat && (
+                    <button 
+                      onClick={() => openGoogleMaps(event.lat!, event.lng!, event.title)}
+                      className="bg-[#F5E6D3] p-2 rounded-full border-2 border-[#8D6E63] active:bg-[#D9B48F]"
+                    >
+                      <Navigation size={18} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      {/* 底部導航列 */}
+      <footer className="fixed bottom-0 w-full bg-[#F5E6D3] border-t-2 border-[#8D6E63] flex justify-around p-3 pb-6">
+        <button className="flex flex-col items-center text-[#8D6E63]"><MapPin size={24} /><span className="text-xs font-bold mt-1">行程</span></button>
+        <button className="flex flex-col items-center text-gray-400"><Wallet size={24} /><span className="text-xs font-bold mt-1">記帳</span></button>
+        <button className="flex flex-col items-center text-gray-400"><Camera size={24} /><span className="text-xs font-bold mt-1">日記</span></button>
+      </footer>
+    </div>
+  );
+}
