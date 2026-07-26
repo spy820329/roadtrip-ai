@@ -87,6 +87,12 @@ const addMinutes = (timeStr, minsToAdd) => {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 };
 
+const getMinutesDiff = (start, end) => {
+  const [h1, m1] = start.split(':').map(Number);
+  const [h2, m2] = end.split(':').map(Number);
+  return (h2 * 60 + m2) - (h1 * 60 + m1);
+};
+
 export default function MyTrip() {
   const [isMounted, setIsMounted] = useState(false);
   const [activeTab, setActiveTab] = useState('itinerary');
@@ -129,6 +135,14 @@ export default function MyTrip() {
     }
   };
 
+  const handleDepartureTimeChange = (newTime) => {
+    if (!currentDayData) return;
+    const oldStartTime = currentDayData.events[0].time;
+    const diffMins = getMinutesDiff(oldStartTime, newTime);
+    const updatedEvents = currentDayData.events.map((ev) => ({ ...ev, time: addMinutes(ev.time, diffMins) }));
+    setTrip({ ...trip, days: trip.days.map(d => d.day === activeDay ? { ...d, events: updatedEvents } : d) });
+  };
+
   const saveEventEdit = () => {
     if (!currentDayData) return;
     const updated = currentDayData.events.map(e => e.id === editingEventData.id ? {
@@ -143,15 +157,20 @@ export default function MyTrip() {
     setShowEventEditForm(false);
   };
 
+  // 🌟 AI 智慧推薦升級：根據「出發時間」計算順延
   const askAIForSuggestions = (query) => {
     if (!query.trim() || !currentDayData) return;
     setIsThinking(true);
     setTimeout(() => {
-      const lastEvent = currentDayData.events[currentDayData.events.length - 1];
-      const baseTime = lastEvent ? lastEvent.time : "09:00";
-      const travelMins = Math.floor(Math.random() * 20) + 20; 
-      const stayMins = query.includes('加油') ? 20 : 60;
-      const suggestedTime = addMinutes(baseTime, 60 + travelMins);
+      // 改為依據該日的第一個行程（出發時間）來計算
+      const startEvent = currentDayData.events[0];
+      const baseTime = startEvent ? startEvent.time : "09:00";
+      
+      const travelMins = Math.floor(Math.random() * 15) + 45; // 模擬 45~60分鐘車程
+      const stayMins = query.includes('加油') || query.includes('廁所') || query.includes('交流道') ? 20 : 60;
+      
+      // 預估抵達時間 ＝ 出發時間 + 車程
+      const suggestedTime = addMinutes(baseTime, travelMins);
 
       setAiSuggestions([{ 
         id: `ai-new-${Date.now()}`, time: suggestedTime, title: query, location: query, 
@@ -163,19 +182,28 @@ export default function MyTrip() {
     }, 1000);
   };
 
+  // 🌟 加入景點並正確觸發 React 狀態更新以順延時間
   const addSuggestedEvent = (suggestion) => {
     if (!currentDayData) return;
-    let newEvents = [...currentDayData.events, suggestion];
+    
+    // 建立一個全新的事件陣列，確保 React 能偵測到狀態改變
+    let newEvents = currentDayData.events.map(e => ({ ...e }));
+    newEvents.push({ ...suggestion });
+    
     newEvents.sort((a, b) => {
       const [ah, am] = a.time.split(':').map(Number);
       const [bh, bm] = b.time.split(':').map(Number);
       return (ah * 60 + am) - (bh * 60 + bm);
     });
+    
     const addedIdx = newEvents.findIndex(e => e.id === suggestion.id);
     const shiftMins = suggestion.travelMins + suggestion.stayMins;
+    
+    // 將排在這個景點後面的所有行程，時間全部加上車程與停留時間
     for (let i = addedIdx + 1; i < newEvents.length; i++) {
       newEvents[i].time = addMinutes(newEvents[i].time, shiftMins);
     }
+    
     setTrip({ ...trip, days: trip.days.map(d => d.day === activeDay ? { ...d, events: newEvents } : d) });
     setAiSuggestions([]);
     setCustomQuery('');
@@ -218,7 +246,14 @@ export default function MyTrip() {
             <section className="space-y-4">
               <h2 className="font-bold text-lg border-b-2 border-dashed border-[#8D6E63] pb-2">{currentDayData?.date} - {currentDayData?.summary}</h2>
               
-              <div className="relative border-l-2 border-[#8D6E63] ml-3 pl-6 space-y-6">
+              {/* 🌟 恢復首站出發時間調整 UI */}
+              <div className="flex items-center gap-2 bg-[#F5E6D3] p-3 rounded-xl border-2 border-[#8D6E63]">
+                <Clock size={20} className="text-[#8D6E63]" />
+                <label className="font-bold text-sm">首站出發時間：</label>
+                <input type="time" value={currentDayData?.events[0]?.time || "09:00"} onChange={(e) => handleDepartureTimeChange(e.target.value)} className="bg-white border-2 border-[#8D6E63] rounded px-2 py-1 font-bold outline-none" />
+              </div>
+              
+              <div className="relative border-l-2 border-[#8D6E63] ml-3 pl-6 space-y-6 mt-4">
                 {currentDayData?.events.map((event) => (
                   <div key={event.id} className="relative bg-white p-3.5 rounded-xl border-2 border-[#8D6E63] shadow-[3px_3px_0px_#8D6E63] flex flex-col space-y-2">
                     <div className="absolute -left-[35px] top-4 w-4 h-4 bg-[#D9B48F] rounded-full border-2 border-[#8D6E63]"></div>
@@ -272,7 +307,7 @@ export default function MyTrip() {
                 {showAI && (
                   <div className="p-4 bg-white border-2 border-[#8D6E63] rounded-xl mt-4 space-y-4 animate-fade-in shadow-[4px_4px_0px_#8D6E63]">
                     <div className="flex gap-2">
-                      <input type="text" placeholder="輸入想去的景點..." value={customQuery} onChange={(e) => setCustomQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && askAIForSuggestions(customQuery)} className="flex-1 border-2 border-[#8D6E63] p-2 rounded-xl outline-none" />
+                      <input type="text" placeholder="輸入想去的景點/餐廳..." value={customQuery} onChange={(e) => setCustomQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && askAIForSuggestions(customQuery)} className="flex-1 border-2 border-[#8D6E63] p-2 rounded-xl outline-none" />
                       <button onClick={() => askAIForSuggestions(customQuery)} className="bg-[#D9B48F] px-4 rounded-xl border-2 border-[#8D6E63] font-bold">搜尋</button>
                     </div>
                     {isThinking && <div className="text-center py-4 text-gray-500 font-bold animate-pulse">計算地圖預估時間中...</div>}
@@ -289,7 +324,7 @@ export default function MyTrip() {
                               <button onClick={() => addSuggestedEvent(suggestion)} className="flex items-center gap-1 bg-white border-2 border-black px-2 py-1 rounded-lg text-xs font-bold shadow-[2px_2px_0px_black] active:translate-y-0.5 active:shadow-[0px_0px_0px_black] flex-shrink-0"><PlusCircle size={14}/> 加入</button>
                             </div>
                             <div className="text-xs bg-[#FFF8E7] p-2 rounded border border-dashed border-[#D9B48F] text-gray-600">
-                              <p className="font-bold mb-1">💡 自動帶入備註：</p>
+                              <p className="font-bold mb-1">💡 預計帶入備註：</p>
                               <ul className="list-disc list-inside">{suggestion.remarks.map((rem, idx) => <li key={idx}>{rem}</li>)}</ul>
                             </div>
                           </div>
@@ -326,7 +361,7 @@ export default function MyTrip() {
             <div className="space-y-4">
               <button onClick={() => fileInputRef.current?.click()} className="w-full flex justify-center items-center gap-2 bg-[#D9B48F] border-2 border-[#8D6E63] p-3 rounded-xl font-bold shadow-[2px_2px_0px_#8D6E63]"><ImagePlus size={20} /> 上傳照片</button>
               <div className="grid grid-cols-2 gap-3">
-                {(dayPhotos[activeDay] || []).map((url, idx) => (<div key={idx} className="aspect-square rounded-xl border-2 border-[#8D6E63] overflow-hidden shadow-[2px_2px_0px_#8D6E63]"><img src={url} alt="照片" className="w-full h-full object-cover" /></div>))}
+                {(dayPhotos[activeDay] || []).map((url, idx) => (<div key={idx} className="aspect-square rounded-xl border-2 border-[#8D6E63] overflow-hidden shadow-[2px_2px_0px_#8D6E63]"><img src={url} className="w-full h-full object-cover" /></div>))}
               </div>
             </div>
           </div>
@@ -336,7 +371,7 @@ export default function MyTrip() {
       <footer className="fixed bottom-0 w-full bg-[#F5E6D3] border-t-2 border-[#8D6E63] flex justify-around p-3 pb-8 z-40">
         <button onClick={() => setActiveTab('itinerary')} className={`flex flex-col items-center w-1/3 ${activeTab === 'itinerary' ? 'text-[#8D6E63]' : 'text-gray-400'}`}><MapPin size={24} /><span className="text-xs font-bold mt-1">行程</span></button>
         <button onClick={() => setActiveTab('ledger')} className={`flex flex-col items-center w-1/3 ${activeTab === 'ledger' ? 'text-[#8D6E63]' : 'text-gray-400'}`}><Wallet size={24} /><span className="text-xs font-bold mt-1">記帳</span></button>
-        <button onClick={() => setActiveTab('diary')} className={`flex flex-col items-center w-1/3 ${activeTab === 'diary' ? 'text-[#8D6E63]' : 'text-gray-400'}`}><Camera size={24} /><span className="text-xs font-bold mt-1">日記</span></button>
+        <button onClick={() => setActiveTab('diary')} className={`flex flex-col items-center w-1/3 ${activeTab === 'diary' ? 'text-[#8D6E63]' : 'text-gray-400'}`}><Camera size={24} className={activeTab === 'diary' ? 'fill-[#D9B48F]' : ''} /><span className="text-xs font-bold mt-1">日記</span></button>
       </footer>
     </div>
   );
