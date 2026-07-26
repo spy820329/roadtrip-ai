@@ -30,11 +30,7 @@ const initialTripData = {
     {
       day: 3, date: "7/28 (二)", summary: "綠島 ➔ 花蓮市區", gasWarning: "⛽ 建議在成功鎮補充電量與油料。",
       events: [
-        { 
-          id: "d3-1", time: "09:00", title: "半潛艇（玻璃船）", location: "南寮漁港登船口第6根柱子", phone: "0912151471", 
-          note: "提前10分鐘集合", mapUrl: "https://goo.gl/maps/Vcsc1Sfr6QBtPW7P9",
-          remarks: ["藍鯨五號黃色招牌處上船", "⚠️ 臨時取消不作退費。", "活動視天候由船長通知為主。", "未準時集合視同放棄亦不退費。"]
-        },
+        { id: "d3-1", time: "09:00", title: "半潛艇（玻璃船）", location: "南寮漁港登船口第6根柱子", phone: "0912151471", note: "提前10分鐘集合", mapUrl: "https://goo.gl/maps/Vcsc1Sfr6QBtPW7P9", remarks: ["藍鯨五號黃色招牌處上船", "⚠️ 臨時取消不作退費。", "活動視天候由船長通知為主。", "未準時集合視同放棄亦不退費。"] },
         { id: "d3-2", time: "12:30", title: "搭船回台東", location: "富岡漁港" },
         { id: "d3-3", time: "14:00", title: "小野柳", location: "小野柳" },
         { id: "d3-4", time: "14:50", title: "水往上流", location: "水往上流遊憩區" },
@@ -60,11 +56,7 @@ const initialTripData = {
       day: 5, date: "7/30 (四)", summary: "烏石港賞鯨 ➔ 羅東", gasWarning: "🚗 短程移動，留意油表即可。",
       events: [
         { id: "d5-1", time: "09:30", title: "前往烏石港", location: "烏石港漁會大樓" },
-        { 
-          id: "d5-2", time: "10:30", title: "宜蘭龜山島登島賞鯨半日遊", location: "宜蘭縣頭城鎮烏石港路168號", phone: "0911217567",
-          note: "請於 10:00 前完成報到",
-          remarks: ["⚠️ 必帶：身分證件", "建議帶防曬油、上船前吃暈船藥", "現場另付登島費100元", "前一晚加 Line(0963499016) 聯繫"]
-        },
+        { id: "d5-2", time: "10:30", title: "宜蘭龜山島登島賞鯨半日遊", location: "宜蘭縣頭城鎮烏石港路168號", phone: "0911217567", note: "請於 10:00 前完成報到", remarks: ["⚠️ 必帶：身分證件", "建議帶防曬油、上船前吃暈船藥", "現場另付登島費100元", "前一晚加 Line(0963499016) 聯繫"] },
         { id: "d5-3", time: "18:00", title: "金城客棧", location: "宜蘭縣公正路60號" }
       ],
       expenses: [{ id: "e5-1", title: "烏石港賞鯨", amount: 1199, status: "paid", category: "門票" }]
@@ -127,6 +119,18 @@ export default function MyTrip() {
 
   const openNav = (loc, url) => window.open(url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`, '_blank');
 
+  // 🗺️ 一鍵串連全導航功能
+  const openFullDayRoute = () => {
+    if (!currentDayData || !currentDayData.events) return;
+    const locations = currentDayData.events.map(e => e.location).filter(loc => Boolean(loc && loc.trim()));
+    if (locations.length === 0) return;
+    if (locations.length === 1) { openNav(locations[0]); return; }
+    const origin = encodeURIComponent(locations[0]);
+    const destination = encodeURIComponent(locations[locations.length - 1]);
+    const waypoints = locations.slice(1, -1).slice(0, 9).map(loc => encodeURIComponent(loc)).join('|');
+    window.open(`https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${waypoints ? `&waypoints=${waypoints}` : ''}`, '_blank');
+  };
+
   const deleteEvent = (id) => {
     if (!currentDayData) return;
     if (confirm("刪除此行程？")) {
@@ -157,19 +161,14 @@ export default function MyTrip() {
     setShowEventEditForm(false);
   };
 
-  // 🌟 AI 智慧推薦升級：根據「出發時間」計算順延
   const askAIForSuggestions = (query) => {
     if (!query.trim() || !currentDayData) return;
     setIsThinking(true);
     setTimeout(() => {
-      // 改為依據該日的第一個行程（出發時間）來計算
       const startEvent = currentDayData.events[0];
       const baseTime = startEvent ? startEvent.time : "09:00";
-      
-      const travelMins = Math.floor(Math.random() * 15) + 45; // 模擬 45~60分鐘車程
+      const travelMins = Math.floor(Math.random() * 15) + 45; 
       const stayMins = query.includes('加油') || query.includes('廁所') || query.includes('交流道') ? 20 : 60;
-      
-      // 預估抵達時間 ＝ 出發時間 + 車程
       const suggestedTime = addMinutes(baseTime, travelMins);
 
       setAiSuggestions([{ 
@@ -182,11 +181,8 @@ export default function MyTrip() {
     }, 1000);
   };
 
-  // 🌟 加入景點並正確觸發 React 狀態更新以順延時間
   const addSuggestedEvent = (suggestion) => {
     if (!currentDayData) return;
-    
-    // 建立一個全新的事件陣列，確保 React 能偵測到狀態改變
     let newEvents = currentDayData.events.map(e => ({ ...e }));
     newEvents.push({ ...suggestion });
     
@@ -199,7 +195,6 @@ export default function MyTrip() {
     const addedIdx = newEvents.findIndex(e => e.id === suggestion.id);
     const shiftMins = suggestion.travelMins + suggestion.stayMins;
     
-    // 將排在這個景點後面的所有行程，時間全部加上車程與停留時間
     for (let i = addedIdx + 1; i < newEvents.length; i++) {
       newEvents[i].time = addMinutes(newEvents[i].time, shiftMins);
     }
@@ -207,6 +202,19 @@ export default function MyTrip() {
     setTrip({ ...trip, days: trip.days.map(d => d.day === activeDay ? { ...d, events: newEvents } : d) });
     setAiSuggestions([]);
     setCustomQuery('');
+  };
+
+  const saveExpense = () => {
+    if (!currentDayData || !expenseForm.title || !expenseForm.amount) return;
+    const newExp = { id: `exp-${Date.now()}`, ...expenseForm, amount: Number(expenseForm.amount) };
+    setTrip({ ...trip, days: trip.days.map(d => d.day === activeDay ? { ...d, expenses: [...d.expenses, newExp] } : d) });
+    setShowExpenseForm(false);
+  };
+
+  const deleteExpense = (id) => {
+    if (!currentDayData) return;
+    const updatedExpenses = currentDayData.expenses.filter(e => e.id !== id);
+    setTrip({ ...trip, days: trip.days.map(d => d.day === activeDay ? { ...d, expenses: updatedExpenses } : d) });
   };
 
   const handlePhotoUpload = (e) => {
@@ -244,9 +252,15 @@ export default function MyTrip() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="font-bold text-lg border-b-2 border-dashed border-[#8D6E63] pb-2">{currentDayData?.date} - {currentDayData?.summary}</h2>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b-2 border-dashed border-[#8D6E63] pb-2">
+                <h2 className="font-bold text-lg">{currentDayData?.date} - {currentDayData?.summary}</h2>
+                {/* 🌟 導航按鈕確實回歸 */}
+                <button onClick={openFullDayRoute} className="flex items-center gap-1.5 bg-[#D9B48F] hover:bg-[#C8A37E] active:scale-95 text-[#4A3728] px-3 py-1.5 rounded-xl border-2 border-[#8D6E63] font-bold text-xs shadow-[2px_2px_0px_#8D6E63] transition-all">
+                  <Route size={16} /><span>一鍵串連全導航</span>
+                </button>
+              </div>
               
-              {/* 🌟 恢復首站出發時間調整 UI */}
+              {/* 🌟 首站出發時間確實回歸 */}
               <div className="flex items-center gap-2 bg-[#F5E6D3] p-3 rounded-xl border-2 border-[#8D6E63]">
                 <Clock size={20} className="text-[#8D6E63]" />
                 <label className="font-bold text-sm">首站出發時間：</label>
@@ -324,7 +338,7 @@ export default function MyTrip() {
                               <button onClick={() => addSuggestedEvent(suggestion)} className="flex items-center gap-1 bg-white border-2 border-black px-2 py-1 rounded-lg text-xs font-bold shadow-[2px_2px_0px_black] active:translate-y-0.5 active:shadow-[0px_0px_0px_black] flex-shrink-0"><PlusCircle size={14}/> 加入</button>
                             </div>
                             <div className="text-xs bg-[#FFF8E7] p-2 rounded border border-dashed border-[#D9B48F] text-gray-600">
-                              <p className="font-bold mb-1">💡 預計帶入備註：</p>
+                              <p className="font-bold mb-1">💡 自動帶入備註：</p>
                               <ul className="list-disc list-inside">{suggestion.remarks.map((rem, idx) => <li key={idx}>{rem}</li>)}</ul>
                             </div>
                           </div>
@@ -342,14 +356,39 @@ export default function MyTrip() {
           <div className="animate-fade-in space-y-6">
             <h2 className="font-bold text-xl border-b-4 border-[#D9B48F] inline-block pb-1">Day {activeDay} 每日花費 💰</h2>
             <div className="bg-white p-4 rounded-xl border-2 border-[#8D6E63] shadow-[4px_4px_0px_#8D6E63]">
-              <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg">款項明細</h3><button onClick={() => setShowExpenseForm(true)} className="bg-[#D9B48F] p-1.5 rounded-full border-2 border-[#8D6E63]"><Plus size={20} /></button></div>
+              <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg">款項明細</h3><button onClick={() => { setEditingExpenseId(null); setExpenseForm({ title: '', amount: '', status: 'paid', category: '飲食' }); setShowExpenseForm(true); }} className="bg-[#D9B48F] p-1.5 rounded-full border-2 border-[#8D6E63]"><Plus size={20} /></button></div>
               <ul className="space-y-3">
                 {currentDayData?.expenses.map(exp => (
                   <li key={exp.id} className="flex justify-between items-center border-b border-dashed border-[#8D6E63] pb-3">
-                    <div><span className="font-bold text-lg">{exp.title}</span><div className={`text-sm font-bold mt-1 ${exp.status === 'paid' ? 'text-green-600' : 'text-red-500'}`}>{exp.status === 'paid' ? '已付' : '未付'} ${exp.amount}</div></div>
+                    <div><span className="text-xs bg-[#F5E6D3] px-2 py-0.5 rounded-full border border-[#8D6E63] mr-2">{exp.category}</span><span className="font-bold text-lg">{exp.title}</span><div className={`text-sm font-bold mt-1 ${exp.status === 'paid' ? 'text-green-600' : 'text-red-500'}`}>{exp.status === 'paid' ? '已付' : '未付'} ${exp.amount}</div></div>
+                    <div className="flex gap-2">
+                      <button onClick={() => { setEditingExpenseId(exp.id); setExpenseForm({ title: exp.title, amount: String(exp.amount), status: exp.status, category: exp.category || '其他' }); setShowExpenseForm(true); }} className="p-2 bg-gray-100 rounded-full border border-gray-300 text-gray-600"><Pencil size={16}/></button>
+                      <button onClick={() => deleteExpense(exp.id)} className="p-2 bg-red-50 rounded-full border border-red-200 text-red-500"><Trash2 size={16}/></button>
+                    </div>
                   </li>
                 ))}
               </ul>
+            </div>
+          </div>
+        )}
+
+        {showExpenseForm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-[#FDF9F1] w-full max-w-sm p-6 rounded-2xl border-4 border-[#8D6E63] shadow-[8px_8px_0px_#8D6E63]">
+              <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-xl">{editingExpenseId ? '修改花費' : '新增花費'}</h3><button onClick={() => setShowExpenseForm(false)}><X size={24}/></button></div>
+              <div className="space-y-4">
+                <input type="text" placeholder="項目" value={expenseForm.title} onChange={e => setExpenseForm({...expenseForm, title: e.target.value})} className="w-full border-2 border-[#8D6E63] p-2 rounded-xl outline-none" />
+                <input type="number" placeholder="金額" value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} className="w-full border-2 border-[#8D6E63] p-2 rounded-xl outline-none" />
+                <div className="flex gap-2">
+                  <select value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})} className="w-1/2 border-2 border-[#8D6E63] p-2 rounded-xl bg-white font-bold outline-none appearance-none">
+                    <option value="飲食">🍔 飲食</option><option value="住宿">🏨 住宿</option><option value="交通">🚗 交通</option><option value="門票">🎟️ 門票</option><option value="套裝">🤿 套裝</option><option value="其他">🛒 其他</option>
+                  </select>
+                  <select value={expenseForm.status} onChange={e => setExpenseForm({...expenseForm, status: e.target.value})} className="w-1/2 border-2 border-[#8D6E63] p-2 rounded-xl bg-white font-bold outline-none appearance-none">
+                    <option value="paid">✅ 已付款</option><option value="unpaid">⚠️ 未付款</option>
+                  </select>
+                </div>
+                <button onClick={saveExpense} className="w-full bg-[#D9B48F] border-2 border-[#8D6E63] p-3 rounded-xl font-bold shadow-[2px_2px_0px_#8D6E63] active:translate-y-1 active:shadow-none transition-all">儲存紀錄</button>
+              </div>
             </div>
           </div>
         )}
@@ -361,7 +400,7 @@ export default function MyTrip() {
             <div className="space-y-4">
               <button onClick={() => fileInputRef.current?.click()} className="w-full flex justify-center items-center gap-2 bg-[#D9B48F] border-2 border-[#8D6E63] p-3 rounded-xl font-bold shadow-[2px_2px_0px_#8D6E63]"><ImagePlus size={20} /> 上傳照片</button>
               <div className="grid grid-cols-2 gap-3">
-                {(dayPhotos[activeDay] || []).map((url, idx) => (<div key={idx} className="aspect-square rounded-xl border-2 border-[#8D6E63] overflow-hidden shadow-[2px_2px_0px_#8D6E63]"><img src={url} className="w-full h-full object-cover" /></div>))}
+                {(dayPhotos[activeDay] || []).map((url, idx) => (<div key={idx} className="aspect-square rounded-xl border-2 border-[#8D6E63] overflow-hidden shadow-[2px_2px_0px_#8D6E63]"><img src={url} alt="照片" className="w-full h-full object-cover" /></div>))}
               </div>
             </div>
           </div>
